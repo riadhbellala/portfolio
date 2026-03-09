@@ -129,7 +129,7 @@ export default function Navbar() {
           transform: "translateX(-50%)",
           color: "white",
           fontWeight: "800",
-          fontSize: "1.95rem",
+          fontSize: "3em",
           letterSpacing: "0.25em",
           textTransform: "uppercase",
           textDecoration: "none",

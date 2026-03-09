@@ -1,318 +1,184 @@
 import { useRef, useEffect } from "react";
 import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Link } from "react-router-dom";
-
-gsap.registerPlugin(ScrollTrigger);
+import { scrollManager } from "../../utils/ScrollManager";
 
 const LETTERS = ["R", "I", "A", "D", "H"];
-
 const MARQUEE = [
-  "web Developer", "★", "React JS", "★",
-  "out of the box ", "★", "Based in Algeria", "★" ,
+  "Frontend Developer","★","React JS","★",
+  "Creative Thinker","★","Based in Algeria","★","Available for Work","★",
 ];
 
 export default function Hero() {
-  const sectionRef    = useRef(null);
-  const lettersRef    = useRef([]);
-  const marqueeRef    = useRef(null);
-  const marqueeInner  = useRef(null);
-  const ctaRef        = useRef(null);
-  const cursorRef     = useRef(null);
-  const scrollLineRef = useRef(null);
-  const locationRef   = useRef(null);
+  const sectionRef   = useRef(null);
+  const lettersRef   = useRef([]);
+  const bottomRowRef = useRef(null);
+  const marqueeRef   = useRef(null);
+  const marqueeInner = useRef(null);
+  const scrollLineRef= useRef(null);
+  const cursorRef    = useRef(null);
 
   useEffect(() => {
-    const ctx = gsap.context(() => {
+    gsap.set(lettersRef.current,   { yPercent: 110, opacity: 0 });
+    gsap.set(bottomRowRef.current, { opacity: 0, y: 20 });
+    gsap.set(scrollLineRef.current,{ scaleY: 0, transformOrigin: "top" });
+    gsap.set(marqueeRef.current,   { opacity: 0 });
 
-      // ── 1. ENTRANCE TIMELINE ─────────────────────────────────────
-      const tl = gsap.timeline({ delay: 0.2 });
+    const entrance = gsap.timeline({ delay: 0.5 });
+    entrance
+      .to(lettersRef.current,
+        { yPercent: 0, opacity: 1, duration: 1, ease: "power4.out", stagger: 0.07 })
+      .to(bottomRowRef.current,
+        { opacity: 1, y: 0, duration: 0.7, ease: "power2.out" }, "-=0.3")
+      .to(scrollLineRef.current,
+        { scaleY: 1, duration: 0.8, ease: "power2.inOut" }, "-=0.4")
+      .to(marqueeRef.current,
+        { opacity: 1, duration: 0.6 }, "-=0.3");
 
-      tl
-        // Letters wipe upward into view
-        .fromTo(lettersRef.current,
-          { yPercent: 110, opacity: 0 },
-          { yPercent: 0, opacity: 1, duration: 1, ease: "power4.out", stagger: 0.07 }
-        )
-        // Bottom info fades up
-        .fromTo([locationRef.current, ctaRef.current],
-          { opacity: 0, y: 16 },
-          { opacity: 1, y: 0, duration: 0.6, ease: "power2.out", stagger: 0.1 },
-          "-=0.3"
-        )
-        // Scroll line grows down
-        .fromTo(scrollLineRef.current,
-          { scaleY: 0, transformOrigin: "top" },
-          { scaleY: 1, duration: 0.8, ease: "power2.inOut" },
-          "-=0.3"
-        )
-        // Marquee fades in
-        .fromTo(marqueeRef.current,
-          { opacity: 0 },
-          { opacity: 1, duration: 0.6 },
-          "-=0.4"
-        );
+    const mWidth = marqueeInner.current.offsetWidth / 3;
+    const marqueeAnim = gsap.to(marqueeInner.current, {
+      x: -mWidth, duration: 20, ease: "none", repeat: -1,
+    });
 
-      // ── 2. INFINITE MARQUEE ──────────────────────────────────────
-      const mWidth = marqueeInner.current.offsetWidth / 3;
-      gsap.to(marqueeInner.current, {
-        x: -mWidth,
-        duration: 20,
-        ease: "none",
-        repeat: -1,
+    const onMove = (e) => {
+      gsap.to(cursorRef.current, { x: e.clientX, y: e.clientY, duration: 0.5, ease: "power2.out" });
+      lettersRef.current.forEach((el) => {
+        if (!el) return;
+        const r = el.getBoundingClientRect();
+        gsap.to(el, {
+          x: (e.clientX - (r.left + r.width / 2)) * 0.035,
+          y: (e.clientY - (r.top + r.height / 2)) * 0.035,
+          duration: 0.9, ease: "power2.out",
+        });
       });
+    };
+    const onLeave = () => {
+      lettersRef.current.forEach((el) => {
+        if (!el) return;
+        gsap.to(el, { x: 0, y: 0, duration: 0.8, ease: "elastic.out(1,0.5)" });
+      });
+    };
 
-      // ── 3. SCROLL PARALLAX ───────────────────────────────────────
-      gsap.to(lettersRef.current, {
-        yPercent: -35,
-        ease: "none",
-        scrollTrigger: {
-          trigger: sectionRef.current,
-          start: "top top",
-          end: "bottom top",
-          scrub: 1,
+    window.addEventListener("mousemove", onMove);
+    const sec = sectionRef.current;
+    sec.addEventListener("mouseleave", onLeave);
+
+    scrollManager.register(sectionRef.current, [
+      {
+        in: (done) => {
+          gsap.timeline({ onComplete: done })
+            .to(lettersRef.current,
+              { opacity: 1, yPercent: 0, letterSpacing: "-0.03em",
+                duration: 0.7, ease: "power2.out", stagger: { each: 0.05, from: "center" } })
+            .to(bottomRowRef.current, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }, "-=0.3")
+            .to(marqueeRef.current,   { opacity: 1, duration: 0.4 }, "-=0.2");
         },
-      });
-
-      gsap.to(marqueeRef.current, {
-        yPercent: -12,
-        ease: "none",
-        scrollTrigger: {
-          trigger: sectionRef.current,
-          start: "top top",
-          end: "bottom top",
-          scrub: 2,
+        out: (done) => {
+          gsap.timeline({ onComplete: done })
+            .to(lettersRef.current,
+              { opacity: 0, letterSpacing: "0.15em", yPercent: -15,
+                duration: 0.6, ease: "power2.in", stagger: { each: 0.04, from: "center" } })
+            .to(bottomRowRef.current, { opacity: 0, y: -20, duration: 0.4, ease: "power2.in" }, "<")
+            .to(marqueeRef.current,   { opacity: 0, duration: 0.3 }, "<");
         },
-      });
+      },
+    ]);
 
-      // ── 4. MAGNETIC MOUSE TRACKING ───────────────────────────────
-      const onMove = (e) => {
-        gsap.to(cursorRef.current, {
-          x: e.clientX,
-          y: e.clientY,
-          duration: 0.5,
-          ease: "power2.out",
-        });
-
-        lettersRef.current.forEach((el) => {
-          const rect = el.getBoundingClientRect();
-          const cx = rect.left + rect.width / 2;
-          const cy = rect.top + rect.height / 2;
-          gsap.to(el, {
-            x: (e.clientX - cx) * 0.035,
-            y: (e.clientY - cy) * 0.035,
-            duration: 0.9,
-            ease: "power2.out",
-          });
-        });
-      };
-
-      const onLeave = () => {
-        lettersRef.current.forEach((el) => {
-          gsap.to(el, { x: 0, y: 0, duration: 0.8, ease: "elastic.out(1,0.5)" });
-        });
-      };
-
-      window.addEventListener("mousemove", onMove);
-      const sec = sectionRef.current;
-      sec.addEventListener("mouseleave", onLeave);
-
-      return () => {
-        window.removeEventListener("mousemove", onMove);
-        sec.removeEventListener("mouseleave", onLeave);
-      };
-
-    }, sectionRef);
-
-    return () => ctx.revert();
+    return () => {
+      marqueeAnim.kill();
+      window.removeEventListener("mousemove", onMove);
+      sec.removeEventListener("mouseleave", onLeave);
+    };
   }, []);
 
-  // ── SHARED STYLE OBJECTS ──────────────────────────────────────────
-  const label = {
-    fontSize: "10px",
-    letterSpacing: "0.4em",
-    textTransform: "uppercase",
-    color: "rgba(255,255,255,0.28)",
-    marginBottom: "6px",
-  };
-
-  const value = {
-    fontSize: "12px",
-    letterSpacing: "0.25em",
-    textTransform: "uppercase",
-    color: "rgba(255,255,255,0.65)",
-  };
+  const metaLabel = { fontSize: "10px", letterSpacing: "0.4em", textTransform: "uppercase", color: "rgba(255,255,255,0.28)", marginBottom: "6px" };
+  const metaValue = { fontSize: "12px", letterSpacing: "0.25em", textTransform: "uppercase", color: "rgba(255,255,255,0.65)" };
 
   return (
     <>
-      {/* ── CUSTOM CURSOR ── */}
-      <div
-        ref={cursorRef}
-        style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          width: "6px",
-          height: "6px",
-          borderRadius: "50%",
-          background: "#2C5584",
-          pointerEvents: "none",
-          zIndex: 9999,
-          transform: "translate(-50%,-50%)",
-          mixBlendMode: "screen",
-        }}
-      />
+      <div ref={cursorRef} style={{
+        position: "fixed", top: 0, left: 0, width: "6px", height: "6px",
+        borderRadius: "50%", background: "#2C5584", pointerEvents: "none",
+        zIndex: 9999, transform: "translate(-50%,-50%)", mixBlendMode: "screen",
+      }} />
 
-      {/* ── HERO SECTION ── */}
-      <section
-        ref={sectionRef}
-        style={{
-          position: "relative",
-          width: "100%",
-          height: "100vh",
-          background: "#080808",
-          overflow: "hidden",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          cursor: "none",
-        }}
-      >
+      <section ref={sectionRef} style={{
+        position: "fixed", inset: 0, width: "100%", height: "100vh",
+        background: "#080808", overflow: "hidden",
+        display: "flex", flexDirection: "column", justifyContent: "center",
+        alignItems: "center",   // ← CENTER
+        cursor: "none", visibility: "hidden",
+      }}>
 
-        {/* GIANT NAME */}
+        {/* Name — centered */}
         <div style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          overflow: "hidden",
-          gap: "clamp(2px, 0.8vw, 14px)",
-          padding: "0 16px",
+          display: "flex", justifyContent: "center", alignItems: "center",
+          overflow: "hidden", gap: "clamp(2px,0.8vw,14px)", padding: "0 24px",
         }}>
-          {LETTERS.map((letter, i) => (
+          {LETTERS.map((letter, index) => (
             <span
-              key={i}
-              ref={(el) => (lettersRef.current[i] = el)}
+              key={index}
+              ref={(el) => (lettersRef.current[index] = el)}
               style={{
                 display: "inline-block",
-                fontSize: "clamp(5rem, 19vw, 20rem)",
-                fontWeight: 900,
-                lineHeight: 0.9,
-                letterSpacing: "-0.03em",
+                fontSize: "clamp(5rem,19vw,20rem)",
+                fontWeight: 900, lineHeight: 0.9, letterSpacing: "-0.03em",
                 color: "transparent",
                 WebkitTextStroke: "1px rgba(255,255,255,0.8)",
-                opacity: 0,
-                userSelect: "none",
-                transition: "color 0.25s, -webkit-text-stroke 0.25s",
+                opacity: 0, userSelect: "none",
+                transition: "color 0.25s ease, -webkit-text-stroke 0.25s ease",
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.color = "#2C5584";
-                e.currentTarget.style.WebkitTextStroke = "1px #2C5584";
+                e.currentTarget.style.webkitTextStroke = "1px #2C5584";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.color = "transparent";
-                e.currentTarget.style.WebkitTextStroke = "1px rgba(255,255,255,0.8)";
+                e.currentTarget.style.webkitTextStroke = "1px rgba(255,255,255,0.8)";
               }}
-            >
-              {letter}
-            </span>
+            >{letter}</span>
           ))}
         </div>
 
-        {/* BOTTOM ROW */}
-        <div style={{
-          position: "absolute",
-          bottom: "100px",
-          left: 0,
-          right: 0,
-          padding: "0 48px",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-end",
+        {/* Bottom row */}
+        <div ref={bottomRowRef} style={{
+          position: "absolute", bottom: "100px", left: 0, right: 0,
+          padding: "0 48px", display: "flex",
+          justifyContent: "space-between", alignItems: "flex-end", opacity: 0,
         }}>
-
-          {/* Left — location */}
-          <div ref={locationRef} style={{ opacity: 0 }}>
-            <p style={label}>Based in</p>
-            <p style={value}>Algeria</p>
+          <div>
+            <p style={metaLabel}>Based in</p>
+            <p style={metaValue}>Algeria</p>
           </div>
-
-          {/* Center — scroll line only, no text */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-            <div
-              ref={scrollLineRef}
-              style={{
-                width: "1px",
-                height: "52px",
-                background: "linear-gradient(to bottom, #2C5584, transparent)",
-              }}
-            />
-          </div>
-
-          {/* Right — CTA */}
-          <div ref={ctaRef} style={{ textAlign: "right", opacity: 0 }}>
-            <p style={label}>Work</p>
-            <Link
-              to="/projects"
-              style={{
-                ...value,
-                textDecoration: "none",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "8px",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = "#2C5584";
-                gsap.to(e.currentTarget, { x: 6, duration: 0.3, ease: "power2.out" });
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = "rgba(255,255,255,0.65)";
-                gsap.to(e.currentTarget, { x: 0, duration: 0.3, ease: "power2.out" });
-              }}
-            >
-              View Projects <span>→</span>
-            </Link>
+          <div ref={scrollLineRef} style={{
+            width: "1px", height: "52px",
+            background: "linear-gradient(to bottom, #2C5584, transparent)",
+          }} />
+          <div style={{ textAlign: "right" }}>
+            <p style={metaLabel}>Work</p>
+            <Link to="/projects"
+              style={{ ...metaValue, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "8px" }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = "#2C5584"; gsap.to(e.currentTarget, { x: 6, duration: 0.3, ease: "power2.out" }); }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(255,255,255,0.65)"; gsap.to(e.currentTarget, { x: 0, duration: 0.3, ease: "power2.out" }); }}
+            >View Projects <span>→</span></Link>
           </div>
         </div>
 
-        {/* MARQUEE */}
-        <div
-          ref={marqueeRef}
-          style={{
-            position: "absolute",
-            bottom: 0,
-            left: 0,
-            right: 0,
-            overflow: "hidden",
-            borderTop: "1px solid rgba(255,255,255,0.05)",
-            padding: "13px 0",
-            opacity: 0,
-          }}
-        >
-          <div
-            ref={marqueeInner}
-            style={{
-              display: "flex",
-              gap: "48px",
-              whiteSpace: "nowrap",
-              width: "max-content",
-            }}
-          >
-            {[...MARQUEE, ...MARQUEE, ...MARQUEE].map((item, i) => (
-              <span
-                key={i}
-                style={{
-                  fontSize: "9px",
-                  letterSpacing: "0.4em",
-                  textTransform: "uppercase",
-                  color: item === "★" ? "#2C5584" : "rgba(255,255,255,0.18)",
-                }}
-              >
-                {item}
-              </span>
+        {/* Marquee */}
+        <div ref={marqueeRef} style={{
+          position: "absolute", bottom: 0, left: 0, right: 0,
+          overflow: "hidden", borderTop: "1px solid rgba(255,255,255,0.05)",
+          padding: "13px 0", opacity: 0,
+        }}>
+          <div ref={marqueeInner} style={{ display: "flex", gap: "48px", whiteSpace: "nowrap", width: "max-content" }}>
+            {[...MARQUEE, ...MARQUEE, ...MARQUEE].map((item, index) => (
+              <span key={index} style={{
+                fontSize: "9px", letterSpacing: "0.4em", textTransform: "uppercase",
+                color: item === "★" ? "#2C5584" : "rgba(255,255,255,0.18)",
+              }}>{item}</span>
             ))}
           </div>
         </div>
-
       </section>
     </>
   );
