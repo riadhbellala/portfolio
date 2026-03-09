@@ -65,7 +65,7 @@ export default function Navbar() {
 
         {/* GitHub */}
         <a
-          href="https://github.com/riadh"
+          href="https://github.com/riadhbellala"
           target="_blank"
           rel="noreferrer"
           style={iconStyle}
@@ -79,7 +79,7 @@ export default function Navbar() {
 
         {/* Instagram */}
         <a
-          href="https://instagram.com/riadh"
+          href="https://www.instagram.com/r_iiiadh.b/"
           target="_blank"
           rel="noreferrer"
           style={iconStyle}
@@ -93,7 +93,7 @@ export default function Navbar() {
 
         {/* WhatsApp */}
         <a
-          href="https://wa.me/213"
+          href="https://wa.me/213555711088"
           target="_blank"
           rel="noreferrer"
           style={iconStyle}
@@ -127,12 +127,14 @@ export default function Navbar() {
           position: "absolute",
           left: "50%",
           transform: "translateX(-50%)",
-          color: "white",
+          color: "transparent",
+          WebkitTextStroke: "2px #2C5584",
           fontWeight: "800",
           fontSize: "3em",
           letterSpacing: "0.25em",
           textTransform: "uppercase",
           textDecoration: "none",
+          WebkitAnimation: "strokeAnim 2.5s ease forwards",
         }}
       >
         R
