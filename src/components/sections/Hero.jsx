@@ -1,424 +1,493 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, forwardRef, useState, useCallback } from "react";
 import gsap from "gsap";
+import { Draggable } from "gsap/Draggable";
+import { InertiaPlugin } from "gsap/InertiaPlugin";
 import { Link } from "react-router-dom";
-import { scrollManager } from "../../utils/ScrollManager";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// useBreakpoint
-// Returns "mobile" (< 640px), "tablet" (640–1023px), or "desktop" (≥ 1024px).
-// It adds a resize listener so the value updates live when the window resizes.
-// We import it inline here so each file is self-contained.
-// ─────────────────────────────────────────────────────────────────────────────
-import { useState, useCallback } from "react";
+gsap.registerPlugin(Draggable, InertiaPlugin);
+
 function useBreakpoint() {
   const get = useCallback(() => {
     const w = window.innerWidth;
-    if (w < 640)  return "mobile";
+    if (w < 640) return "mobile";
     if (w < 1024) return "tablet";
     return "desktop";
   }, []);
-
   const [bp, setBp] = useState(get);
-
   useEffect(() => {
-    const handler = () => setBp(get());
-    window.addEventListener("resize", handler);
-    return () => window.removeEventListener("resize", handler);
+    const h = () => setBp(get());
+    window.addEventListener("resize", h);
+    return () => window.removeEventListener("resize", h);
   }, [get]);
-
   return bp;
 }
 
-const LETTERS = ["R", "I", "A", "D", "H"];
-const MARQUEE = [
-  "Frontend Developer", "✦", "React JS", "✦",
-  "Creative Thinker", "✦", "Based in Algeria", "✦", "Available for Work", "✦",
-];
+const LETTERS = ["R","I","A","D","H"];
 
-export default function Hero() {
-  const bp = useBreakpoint();
-  // isMobile / isTablet used for conditional rendering and style values
-  const isMobile = bp === "mobile";
-  const isTablet = bp === "tablet";
+// ── Neural Brain Shape — draggable, animated, living ─────────────────────────
+function NeuralBrain({ isMobile }) {
+  const containerRef = useRef(null);
+  const isDrag       = useRef(false);
+  const floatRef     = useRef(null);
+  const canvasRef    = useRef(null);
+  const animFrameRef = useRef(null);
 
-  const sectionRef     = useRef(null);
-  const lettersRef     = useRef([]);
-  const bottomRowRef   = useRef(null);
-  const marqueeRef     = useRef(null);
-  const marqueeInner   = useRef(null);
-  const scrollLineRef  = useRef(null);
-  // Cursor refs — only used on desktop (mouse devices)
-  const cursorDotRef   = useRef(null);
-  const cursorRingRef  = useRef(null);
-  const glowRef        = useRef(null);
-  const marqueeAnimRef = useRef(null);
+  // Node positions for the neural network
+  const nodes = useRef([
+    // core
+    { x:200, y:180, r:7,  layer:0 },
+    { x:200, y:220, r:5,  layer:0 },
+    // left cluster
+    { x:100, y:100, r:6,  layer:1 },
+    { x:80,  y:160, r:4,  layer:1 },
+    { x:110, y:240, r:5,  layer:1 },
+    { x:90,  y:300, r:4,  layer:1 },
+    // right cluster
+    { x:300, y:90,  r:5,  layer:2 },
+    { x:320, y:160, r:6,  layer:2 },
+    { x:310, y:240, r:4,  layer:2 },
+    { x:290, y:310, r:5,  layer:2 },
+    // top
+    { x:180, y:50,  r:4,  layer:3 },
+    { x:220, y:40,  r:3,  layer:3 },
+    { x:160, y:80,  r:3,  layer:3 },
+    { x:240, y:70,  r:4,  layer:3 },
+    // bottom
+    { x:170, y:350, r:4,  layer:4 },
+    { x:210, y:360, r:3,  layer:4 },
+    { x:240, y:340, r:4,  layer:4 },
+    // satellites
+    { x:50,  y:200, r:3,  layer:5 },
+    { x:350, y:200, r:3,  layer:5 },
+    { x:200, y:400, r:3,  layer:5 },
+  ]).current;
+
+  // Connections between node indices
+  const connections = useRef([
+    [0,1],[0,2],[0,6],[0,10],[0,3],
+    [1,4],[1,7],[1,14],[1,9],
+    [2,3],[2,10],[2,17],
+    [3,4],[3,5],[3,17],
+    [4,5],[4,14],
+    [5,17],[5,15],
+    [6,7],[6,10],[6,11],
+    [7,8],[7,18],
+    [8,9],[8,16],
+    [9,15],[9,18],
+    [10,11],[10,12],[10,13],
+    [11,13],[12,2],[13,6],
+    [14,15],[15,16],[16,9],
+    [17,3],[18,7],[19,15],
+    [0,13],[1,12],[5,19],[8,19],
+  ]).current;
 
   useEffect(() => {
-    const section = sectionRef.current;
-    // Make this section immediately visible.
-    // ScrollManager will hide all other sections when init() runs.
-    gsap.set(section, { autoAlpha: 1 });
+    const el = containerRef.current;
+    if (!el) return;
 
-    // ── Set starting (hidden) states for every animated element ──────────
-    // yPercent: 120  →  element starts 120% of its own height BELOW its
-    // normal position. Because the parent has overflow:hidden, it's invisible.
-    gsap.set(lettersRef.current,    { yPercent: 120, opacity: 0 });
-    gsap.set(bottomRowRef.current,  { opacity: 0, y: 28 });
-    gsap.set(scrollLineRef.current, { scaleY: 0, transformOrigin: "top" });
-    gsap.set(marqueeRef.current,    { opacity: 0 });
-    if (cursorRingRef.current) gsap.set(cursorRingRef.current, { scale: 0, opacity: 0 });
+    const size = isMobile ? 0.55 : 1;
+    gsap.set(el, { x: isMobile ? 0 : 280, y: isMobile ? 0 : -30, scale: size, opacity: 0 });
 
-    // ── Entrance timeline ────────────────────────────────────────────────
-    // gsap.timeline() chains animations. Each .to() starts when the previous
-    // one ends, unless you pass a position parameter like "-=0.4" which means
-    // "start 0.4 seconds before the previous one finishes" (overlap/parallelize).
-    const tl = gsap.timeline({ delay: 0.3 });
-    tl
-      // Letters rise up one by one. stagger:0.07 = 70ms between each letter.
-      // power4.out = very fast start, smooth deceleration — gives energy.
-      .to(lettersRef.current,
-        { yPercent: 0, opacity: 1, duration: 1.1, ease: "power4.out", stagger: 0.07 })
-      // Cursor ring pops in with a back.out overshoot while letters still animating
-      .to(cursorRingRef.current,
-        { scale: 1, opacity: 1, duration: 0.5, ease: "back.out(2.5)" }, "-=0.6")
-      // Bottom row slides up — starts 0.4s before cursor ring finishes
-      .to(bottomRowRef.current,
-        { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" }, "-=0.4")
-      // Scroll line grows downward from top
-      .to(scrollLineRef.current,
-        { scaleY: 1, duration: 1.2, ease: "power2.inOut" }, "-=0.6")
-      // Marquee fades in
-      .to(marqueeRef.current,
-        { opacity: 1, duration: 0.5 }, "-=0.5");
-
-    // ── Marquee animation ────────────────────────────────────────────────
-    // offsetWidth / 3 = width of ONE copy of the text (we have 3 copies).
-    // We animate x from 0 to -mWidth, which scrolls exactly one full copy.
-    // repeat:-1 loops forever. ease:"none" = constant speed, no easing.
-    // When x reaches -mWidth, GSAP loops back to 0 — invisible because
-    // the content at position 0 looks identical to position -mWidth.
-    const mWidth = marqueeInner.current.offsetWidth / 3;
-    marqueeAnimRef.current = gsap.to(marqueeInner.current, {
-      x: -mWidth, duration: 24, ease: "none", repeat: -1,
+    // Float the whole brain
+    floatRef.current = gsap.to(el, {
+      y: `+=${isMobile ? 12 : 20}`,
+      rotation: 4,
+      duration: 4,
+      ease: "sine.inOut",
+      repeat: -1, yoyo: true,
+      delay: 0.5,
     });
 
-    // ── Mouse tracking — all non-touch devices (desktop + tablet) ──────────
-    // Mobile phones are touch-only so we skip everything mouse-related there.
-    // Tablets (iPad, Surface, etc.) can have a mouse/trackpad — include them.
-    // The CUSTOM CURSOR dot+ring is desktop-only (see JSX).
-    // The MAGNETIC EFFECT + GLOW work on both desktop and tablet.
-    let onMove, onLeave;
-    if (!isMobile) {
-      onMove = (e) => {
-        // Custom cursor elements only exist on desktop — guard with ?. (optional chaining)
-        // so this doesn't crash on tablet where the refs are null
-        if (cursorDotRef.current)
-          gsap.to(cursorDotRef.current,
-            { x: e.clientX, y: e.clientY, duration: 0.08, ease: "none" });
-        if (cursorRingRef.current)
-          gsap.to(cursorRingRef.current,
-            { x: e.clientX, y: e.clientY, duration: 0.5, ease: "power2.out" });
+    // Reveal
+    gsap.to(el, { opacity: 1, duration: 1.2, ease: "power2.out", delay: 0.8 });
 
-        // Glow blob follows cursor on both desktop and tablet
-        gsap.to(glowRef.current,
-          { x: e.clientX, y: e.clientY, duration: 1.8, ease: "power2.out" });
-
-        // Magnetic pull — works on desktop and tablet
-        lettersRef.current.forEach((el) => {
-          if (!el) return;
-          const r    = el.getBoundingClientRect();
-          const cx   = r.left + r.width / 2;
-          const cy   = r.top  + r.height / 2;
-          const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
-          const str  = Math.max(0, 1 - dist / 380) * 0.06;
-          gsap.to(el, {
-            x: (e.clientX - cx) * str,
-            y: (e.clientY - cy) * str,
-            duration: 0.9, ease: "power2.out",
-          });
-        });
-      };
-
-      onLeave = () => {
-        lettersRef.current.forEach((el) => {
-          if (!el) return;
-          gsap.to(el, { x: 0, y: 0, duration: 1.1, ease: "elastic.out(1, 0.4)" });
-        });
-      };
-
-      window.addEventListener("mousemove", onMove);
-      section.addEventListener("mouseleave", onLeave);
-    }
-
-    // ── Register with ScrollManager ──────────────────────────────────────
-    // in(done)  = how this section animates INTO view (called by ScrollManager)
-    // out(done) = how this section animates OUT OF view
-    // CRITICAL: done() must always be called — it unlocks isAnimating.
-    scrollManager.register(section, [
-      {
-        in: (done) => {
-          gsap.timeline({ onComplete: done })
-            .to(lettersRef.current,
-              { opacity: 1, yPercent: 0, duration: 0.7, ease: "power2.out",
-                stagger: { each: 0.06, from: "center" } }) // lights up from center out
-            .to(bottomRowRef.current,
-              { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }, "-=0.3")
-            .to(marqueeRef.current,
-              { opacity: 1, duration: 0.4 }, "-=0.2");
-        },
-        out: (done) => {
-          gsap.timeline({ onComplete: done })
-            .to(lettersRef.current,
-              { opacity: 0, letterSpacing: "0.2em", yPercent: -20,
-                duration: 0.65, ease: "power2.in",
-                stagger: { each: 0.04, from: "center" } }) // dims from center out
-            .to(bottomRowRef.current,
-              { opacity: 0, y: -20, duration: 0.4, ease: "power2.in" }, "<")
-            .to(marqueeRef.current,
-              { opacity: 0, duration: 0.3 }, "<");
-        },
+    // Make draggable
+    Draggable.create(el, {
+      type: "x,y",
+      inertia: true,
+      cursor: "grab",
+      activeCursor: "grabbing",
+      onDragStart() {
+        isDrag.current = true;
+        floatRef.current?.pause();
+        gsap.to(el, { scale: size * 1.05, duration: 0.3, ease: "power2.out" });
       },
-    ]);
+      onDragEnd() {
+        isDrag.current = false;
+        gsap.to(el, {
+          scale: size, duration: 0.8, ease: "elastic.out(1,0.4)",
+          onComplete: () => floatRef.current?.play(),
+        });
+      },
+    });
+
+    // Parallax
+    const onMove = (e) => {
+      if (isDrag.current) return;
+      const cx = window.innerWidth / 2;
+      const cy = window.innerHeight / 2;
+      gsap.to(el, {
+        x: (isMobile ? 0 : 280) + (e.clientX - cx) * 0.04,
+        y: (isMobile ? 0 : -30) + (e.clientY - cy) * 0.03,
+        duration: 1.8, ease: "power1.out", overwrite: "auto",
+      });
+    };
+    if (!isMobile) window.addEventListener("mousemove", onMove);
+
+    // Animate pulse signals traveling along connections
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    canvas.width  = 420;
+    canvas.height = 420;
+    const ctx = canvas.getContext("2d");
+
+    // Traveling signals state
+    const signals = connections.map((conn) => ({
+      conn,
+      t: Math.random(),
+      speed: 0.003 + Math.random() * 0.004,
+      active: Math.random() > 0.6,
+      opacity: 0,
+    }));
+
+    // Node pulse phases
+    const phases = nodes.map(() => Math.random() * Math.PI * 2);
+
+    let frame = 0;
+    function draw() {
+      ctx.clearRect(0, 0, 420, 420);
+      frame++;
+
+      // Draw connections
+      connections.forEach(([a, b], i) => {
+        const na = nodes[a]; const nb = nodes[b];
+        const alpha = 0.08 + Math.sin(frame * 0.01 + i * 0.3) * 0.04;
+        ctx.beginPath();
+        ctx.moveTo(na.x, na.y);
+        ctx.lineTo(nb.x, nb.y);
+        ctx.strokeStyle = `rgba(44,85,132,${alpha})`;
+        ctx.lineWidth = 0.8;
+        ctx.stroke();
+      });
+
+      // Draw traveling signals
+      signals.forEach((sig) => {
+        if (!sig.active) {
+          if (Math.random() < 0.005) { sig.active = true; sig.t = 0; }
+          return;
+        }
+        sig.t += sig.speed;
+        if (sig.t >= 1) { sig.active = false; sig.t = 0; return; }
+
+        const [a, b] = sig.conn;
+        const na = nodes[a]; const nb = nodes[b];
+        const x = na.x + (nb.x - na.x) * sig.t;
+        const y = na.y + (nb.y - na.y) * sig.t;
+        const alpha = Math.sin(sig.t * Math.PI);
+
+        ctx.beginPath();
+        ctx.arc(x, y, 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(100,160,255,${alpha * 0.9})`;
+        ctx.fill();
+
+        // Glow
+        const grad = ctx.createRadialGradient(x,y,0, x,y,8);
+        grad.addColorStop(0, `rgba(100,160,255,${alpha * 0.4})`);
+        grad.addColorStop(1, "transparent");
+        ctx.beginPath();
+        ctx.arc(x, y, 8, 0, Math.PI * 2);
+        ctx.fillStyle = grad;
+        ctx.fill();
+      });
+
+      // Draw nodes
+      nodes.forEach((n, i) => {
+        const pulse = Math.sin(frame * 0.02 + phases[i]) * 0.5 + 0.5;
+        const r = n.r + pulse * 2;
+        const alpha = 0.5 + pulse * 0.5;
+
+        // Outer glow
+        const grad = ctx.createRadialGradient(n.x,n.y,0, n.x,n.y,r*4);
+        grad.addColorStop(0, `rgba(44,120,200,${alpha * 0.3})`);
+        grad.addColorStop(1, "transparent");
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, r * 4, 0, Math.PI * 2);
+        ctx.fillStyle = grad;
+        ctx.fill();
+
+        // Core
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(44,100,180,${alpha})`;
+        ctx.fill();
+
+        // Bright center
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, r * 0.4, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(140,200,255,${alpha * 0.9})`;
+        ctx.fill();
+      });
+
+      animFrameRef.current = requestAnimationFrame(draw);
+    }
+    draw();
 
     return () => {
-      marqueeAnimRef.current?.kill(); // stop marquee loop on unmount
-      if (onMove) window.removeEventListener("mousemove", onMove);
-      if (onLeave) section.removeEventListener("mouseleave", onLeave);
+      floatRef.current?.kill();
+      cancelAnimationFrame(animFrameRef.current);
+      if (!isMobile) window.removeEventListener("mousemove", onMove);
     };
-  // Re-run if isMobile changes — mobile loses all mouse effects,
-  // tablet and desktop both keep them
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMobile]);
 
-  // ── Letter hover handlers (desktop only) ────────────────────────────────
-  // ── Letter hover handlers ────────────────────────────────────────────────
-  // Skip ONLY on mobile (touch-only). Tablet users can have a mouse/trackpad
-  // and should get the full colour + scale + cursor ring effect.
-  // On desktop: cursor ring also animates (it exists in the DOM).
-  // On tablet: cursor ring ref is null — the gsap.to calls are guarded with ?.
-  const handleLetterEnter = (e) => {
+  return (
+    <div ref={containerRef} style={{
+      position: "absolute",
+      top: "50%", left: isMobile ? "50%" : "auto",
+      right: isMobile ? "auto" : "6%",
+      transform: "translate(-50%, -50%)",
+      cursor: "grab",
+      zIndex: 2,
+      userSelect: "none",
+    }}>
+      <canvas ref={canvasRef} width={420} height={420} style={{
+        display: "block",
+        filter: "drop-shadow(0 0 30px rgba(44,100,200,0.4))",
+      }}/>
+    </div>
+  );
+}
+
+const Hero = forwardRef(function Hero({ isMobile }, ref) {
+  const bp        = useBreakpoint();
+  const isTablet  = bp === "tablet";
+
+  const lettersRef    = useRef([]);
+  const bottomRowRef  = useRef(null);
+  const glowRef       = useRef(null);
+  const cursorRingRef = useRef(null);
+  const subtitleRef   = useRef(null);
+  const lineRef       = useRef(null);
+  const taglineRef    = useRef(null);
+  const hasEntered    = useRef(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (hasEntered.current) return;
+      hasEntered.current = true;
+      runEntrance();
+    }, 200);
+    return () => clearTimeout(timer);
+  }, []);
+
+  function runEntrance() {
+    lettersRef.current.forEach((el) => {
+      if (!el) return;
+      gsap.set(el, { opacity:1, y:140, rotateX:-80, transformOrigin:"50% 100%" });
+    });
+    gsap.set(lineRef.current,     { scaleX:0, transformOrigin:"left" });
+    gsap.set(subtitleRef.current, { opacity:0, y:10 });
+    gsap.set(taglineRef.current,  { opacity:0, x:-20 });
+    gsap.set(bottomRowRef.current,{ opacity:0, y:24 });
+ 
+
+    const tl = gsap.timeline();
+
+    tl.to(lettersRef.current, {
+      y:0, rotateX:0,
+      duration:1.1, ease:"power4.out",
+      stagger:{ each:0.07, from:"start" },
+    });
+
+    tl.to(lineRef.current, { scaleX:1, duration:0.7, ease:"power3.inOut" }, "-=0.5");
+
+    tl.to(subtitleRef.current, { opacity:1, y:0, duration:0.7, ease:"power3.out" }, "-=0.4");
+    tl.to(taglineRef.current,  { opacity:1, x:0, duration:0.6, ease:"power3.out" }, "-=0.5");
+
+    tl.to(bottomRowRef.current, { opacity:1, y:0, duration:0.7, ease:"power3.out" }, "-=0.4");
+
+  }
+
+
+  useEffect(() => {
+    if (isMobile) return;
+    const section = ref?.current;
+    const onMove = (e) => {
+      gsap.to(glowRef.current,       { x:e.clientX, y:e.clientY, duration:2,   ease:"power2.out" });
+      gsap.to(cursorRingRef.current, { x:e.clientX, y:e.clientY, duration:0.5, ease:"power2.out" });
+      lettersRef.current.forEach((el) => {
+        if (!el) return;
+        const r   = el.getBoundingClientRect();
+        const cx  = r.left + r.width  / 2;
+        const cy  = r.top  + r.height / 2;
+        const dx  = e.clientX - cx;
+        const dy  = e.clientY - cy;
+        const str = Math.max(0, 1 - Math.hypot(dx,dy) / 320) * 0.05;
+        gsap.to(el, { x:dx*str, y:dy*str, duration:0.9, ease:"power2.out" });
+      });
+    };
+    const onLeave = () =>
+      lettersRef.current.forEach(el => el && gsap.to(el, { x:0, y:0, duration:1.0, ease:"elastic.out(1,0.4)" }));
+    window.addEventListener("mousemove", onMove);
+    section?.addEventListener("mouseleave", onLeave);
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      section?.removeEventListener("mouseleave", onLeave);
+    };
+  }, [isMobile, ref]);
+
+  const onLetterEnter = (e) => {
     if (isMobile) return;
     e.currentTarget.style.color = "#2C5584";
     e.currentTarget.style.webkitTextStroke = "1px #2C5584";
-    gsap.to(e.currentTarget, { scale: 1.07, duration: 0.3, ease: "power2.out" });
-    // cursorRingRef.current is null on tablet — optional chaining prevents crash
-    if (cursorRingRef.current)
-      gsap.to(cursorRingRef.current,
-        { scale: 2.8, borderColor: "rgba(44,85,132,0.9)", duration: 0.35, ease: "power2.out" });
+    gsap.to(e.currentTarget, { scale:1.08, duration:0.3, ease:"power2.out" });
+    gsap.to(cursorRingRef.current, { scale:2.5, duration:0.3 });
   };
-  const handleLetterLeave = (e) => {
+  const onLetterLeave = (e) => {
     if (isMobile) return;
     e.currentTarget.style.color = "transparent";
     e.currentTarget.style.webkitTextStroke = "1px rgba(255,255,255,0.72)";
-    gsap.to(e.currentTarget, { scale: 1, duration: 0.8, ease: "elastic.out(1, 0.4)" });
-    if (cursorRingRef.current)
-      gsap.to(cursorRingRef.current,
-        { scale: 1, borderColor: "rgba(44,85,132,0.55)", duration: 0.4, ease: "power2.out" });
+    gsap.to(e.currentTarget, { scale:1, duration:0.8, ease:"elastic.out(1,0.4)" });
+    gsap.to(cursorRingRef.current, { scale:1, duration:0.3 });
   };
+
+  const ml = { fontSize:"9px",  letterSpacing:"0.45em", textTransform:"uppercase", color:"rgba(255,255,255,0.22)", marginBottom:"6px" };
+  const mv = { fontSize:"11px", letterSpacing:"0.28em", textTransform:"uppercase", color:"rgba(255,255,255,0.58)" };
 
   return (
     <>
-      {/* ── Custom cursor — hidden on mobile/tablet ── */}
-      {/* position:fixed + top/left:0 means GSAP moves them using x/y (transform) */}
-      {/* translate(-50%,-50%) keeps the center of each circle on the cursor point */}
       {!isMobile && !isTablet && (
-        <>
-          <div ref={cursorDotRef} style={{
-            position: "fixed", top: 0, left: 0, width: "4px", height: "4px",
-            borderRadius: "50%", background: "#fff", pointerEvents: "none",
-            zIndex: 9999, transform: "translate(-50%,-50%)",
-          }} />
-          <div ref={cursorRingRef} style={{
-            position: "fixed", top: 0, left: 0, width: "38px", height: "38px",
-            borderRadius: "50%", border: "1px solid rgba(44,85,132,0.55)",
-            pointerEvents: "none", zIndex: 9998, transform: "translate(-50%,-50%)",
-          }} />
-        </>
+        <div ref={cursorRingRef} aria-hidden="true" style={{
+          position:"fixed",top:0,left:0,width:"36px",height:"36px",borderRadius:"50%",
+          border:"1px solid rgba(44,85,132,0.5)",pointerEvents:"none",
+          zIndex:9998,transform:"translate(-50%,-50%)",
+        }}/>
       )}
 
-      <section
-        ref={sectionRef}
-        style={{
-          position: "fixed", inset: 0, width: "100%", height: "100vh",
-          background: "#080808", overflow: "hidden",
-          display: "flex", flexDirection: "column",
-          justifyContent: "center", alignItems: "center",
-          // Hide the real cursor on desktop (we have our custom one)
-          // On mobile restore default cursor for usability
-          cursor: isMobile || isTablet ? "auto" : "none",
-        }}
-      >
-        {/* ── Ambient glow blob ──────────────────────────────────────────── */}
-        {/* Mobile: CSS-centered (no mouse to follow). position absolute 50%/50%.  */}
-        {/* Tablet + Desktop: starts at top:0,left:0 — GSAP moves it via x/y      */}
-        {/* on mousemove so it follows the cursor. translate(-50%,-50%) keeps the  */}
-        {/* center of the blob on the cursor point regardless of its size.         */}
-        <div
-          ref={glowRef}
-          style={{
-            position: "absolute",
-            top:  isMobile ? "50%" : 0,
-            left: isMobile ? "50%" : 0,
-            width: isMobile ? "280px" : "600px",
-            height: isMobile ? "280px" : "600px",
-            borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(44,85,132,0.12) 0%, transparent 68%)",
-            pointerEvents: "none",
-            transform: "translate(-50%,-50%)",
-            filter: "blur(50px)", zIndex: 0,
-          }}
-        />
+      <section ref={ref} style={{
+        position:"fixed",inset:0,width:"100%",height:"100vh",
+        background:"#080808",overflow:"hidden",
+        display:"flex",flexDirection:"column",
+        justifyContent:"center",
+        alignItems: isTablet||isMobile ? "center" : "flex-start",
+        paddingLeft: isTablet||isMobile ? "20px" : "8%",
+        paddingRight: isTablet||isMobile ? "20px" : "52%",
+        cursor: isMobile||isTablet ? "auto" : "none",
+        perspective:"1000px",
+      }}>
 
-        {/* ── Corner brackets — smaller on mobile ── */}
+        {/* Ambient glow follows cursor */}
+        <div ref={glowRef} aria-hidden="true" style={{
+          position:"absolute",top:0,left:0,
+          width:"700px",height:"700px",borderRadius:"50%",
+          background:"radial-gradient(circle, rgba(44,85,132,0.12) 0%, transparent 65%)",
+          pointerEvents:"none",filter:"blur(60px)",zIndex:0,
+          transform:"translate(-50%,-50%)",
+        }}/>
+
+        {/* Corner brackets */}
         {[
-          { top: isMobile ? "16px" : "32px", left: isMobile ? "16px" : "32px",
-            borderTop: "1px solid rgba(44,85,132,0.28)", borderLeft: "1px solid rgba(44,85,132,0.28)" },
-          { top: isMobile ? "16px" : "32px", right: isMobile ? "16px" : "32px",
-            borderTop: "1px solid rgba(44,85,132,0.28)", borderRight: "1px solid rgba(44,85,132,0.28)" },
-          { bottom: isMobile ? "16px" : "32px", left: isMobile ? "16px" : "32px",
-            borderBottom: "1px solid rgba(44,85,132,0.28)", borderLeft: "1px solid rgba(44,85,132,0.28)" },
-          { bottom: isMobile ? "16px" : "32px", right: isMobile ? "16px" : "32px",
-            borderBottom: "1px solid rgba(44,85,132,0.28)", borderRight: "1px solid rgba(44,85,132,0.28)" },
-        ].map((s, i) => (
-          <div key={i} style={{
-            position: "absolute",
-            width: isMobile ? "14px" : "20px",
-            height: isMobile ? "14px" : "20px",
-            pointerEvents: "none", zIndex: 1, ...s,
-          }} />
+          {top:"24px",left:"24px",   borderTop:"1px solid rgba(44,85,132,0.28)",borderLeft:"1px solid rgba(44,85,132,0.28)"},
+          {top:"24px",right:"24px",  borderTop:"1px solid rgba(44,85,132,0.28)",borderRight:"1px solid rgba(44,85,132,0.28)"},
+          {bottom:"24px",left:"24px",borderBottom:"1px solid rgba(44,85,132,0.28)",borderLeft:"1px solid rgba(44,85,132,0.28)"},
+          {bottom:"24px",right:"24px",borderBottom:"1px solid rgba(44,85,132,0.28)",borderRight:"1px solid rgba(44,85,132,0.28)"},
+        ].map((s,i)=>(
+          <div key={i} aria-hidden="true" style={{position:"absolute",width:"20px",height:"20px",pointerEvents:"none",zIndex:1,...s}}/>
         ))}
 
-        {/* ── Name letters ── */}
-        {/* overflow:hidden on this wrapper clips the letters during the slide-up entrance */}
+        {/* Neural brain — right side */}
+        <NeuralBrain isMobile={isMobile || isTablet} />
+
+        {/* Index number */}
+        <span style={{
+          fontSize:"9px",letterSpacing:"0.5em",textTransform:"uppercase",
+          color:"rgba(44,85,132,0.7)",marginBottom:"20px",zIndex:3,
+          display:"block",
+        }}></span>
+
+        {/* Big letters */}
         <div style={{
-          display: "flex", justifyContent: "center", alignItems: "center",
-          overflow: "hidden",
-          // clamp(min, preferred, max) — scales with viewport width (vw)
-          // On mobile: letters are bigger relative to screen (fills nicely)
-          gap: "clamp(1px, 0.8vw, 14px)",
-          padding: isMobile ? "0 12px" : "0 24px",
-          position: "relative", zIndex: 1,
+          display:"flex",justifyContent: isTablet||isMobile?"center":"flex-start",
+          alignItems:"center",
+          gap:"clamp(2px,0.6vw,10px)",
+          padding:"0",
+          position:"relative",zIndex:3,
+          perspective:"800px",
+          overflow:"visible",
         }}>
           {LETTERS.map((letter, i) => (
-            <span
-              key={i}
-              ref={(el) => (lettersRef.current[i] = el)}
+            <span key={i} ref={(el) => (lettersRef.current[i] = el)}
               style={{
-                display: "inline-block",
-                // clamp auto-adapts: mobile fills screen width, desktop caps at 20rem
+                display:"inline-block",
                 fontSize: isMobile
-                  ? "clamp(3.5rem, 18vw, 5.5rem)"
-                  : isTablet
-                  ? "clamp(4rem, 15vw, 10rem)"
-                  : "clamp(5rem, 19vw, 20rem)",
-                fontWeight: 900, lineHeight: 0.9, letterSpacing: "-0.03em",
-                color: "transparent",
-                WebkitTextStroke: isMobile ? "1px rgba(255,255,255,0.65)" : "1px rgba(255,255,255,0.72)",
-                opacity: 0, userSelect: "none",
-                transition: "color 0.2s, -webkit-text-stroke 0.2s",
-                willChange: "transform",
+                  ?"clamp(3.8rem,20vw,6rem)"
+                  :isTablet
+                  ?"clamp(4rem,14vw,9rem)"
+                  :"clamp(5rem,12vw,13rem)",
+                fontWeight:900,lineHeight:0.88,letterSpacing:"-0.04em",
+                color:"transparent",
+                WebkitTextStroke: isMobile?"1px rgba(255,255,255,0.6)":"1px rgba(255,255,255,0.75)",
+                userSelect:"none",willChange:"transform",
+                transition:"color 0.2s, -webkit-text-stroke 0.2s",
+                transformStyle:"preserve-3d",
               }}
-              onMouseEnter={handleLetterEnter}
-              onMouseLeave={handleLetterLeave}
-            >
-              {letter}
-            </span>
+              onMouseEnter={onLetterEnter}
+              onMouseLeave={onLetterLeave}
+            >{letter}</span>
           ))}
         </div>
 
-        {/* ── Bottom row — hidden on mobile to avoid cramping ── */}
-        {/* On mobile we only show the scroll indicator (centered) */}
-        <div
-          ref={bottomRowRef}
-          style={{
-            position: "absolute",
-            // Raise bottom row slightly on tablet to avoid marquee overlap
-            bottom: isMobile ? "60px" : isTablet ? "80px" : "90px",
-            left: 0, right: 0,
-            padding: isMobile ? "0 20px" : isTablet ? "0 32px" : "0 52px",
-            display: "flex",
-            // Mobile: center everything. Tablet/desktop: space-between
-            justifyContent: isMobile ? "center" : "space-between",
-            alignItems: "flex-end",
-            opacity: 0, zIndex: 1,
-          }}
-        >
-          {/* Hide "Based in" on mobile — not enough space */}
-          {!isMobile && (
-            <div>
-              <p style={{ fontSize: "9px", letterSpacing: "0.45em", textTransform: "uppercase",
-                color: "rgba(255,255,255,0.22)", marginBottom: "6px" }}>Based in</p>
-              <p style={{ fontSize: "11px", letterSpacing: "0.28em", textTransform: "uppercase",
-                color: "rgba(255,255,255,0.58)" }}>Algeria</p>
-            </div>
-          )}
+        {/* Thin rule */}
+        <div ref={lineRef} style={{
+          width:"clamp(180px,40vw,420px)",
+          height:"1px",
+          background:"linear-gradient(90deg,rgba(44,85,132,0.8),rgba(44,85,132,0.2),transparent)",
+          marginTop:"16px",zIndex:3,
+        }}/>
 
-          {/* Scroll indicator — always visible */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
-            <div ref={scrollLineRef} style={{
-              width: "1px", height: isMobile ? "36px" : "52px",
-              background: "linear-gradient(to bottom, rgba(44,85,132,0.8), transparent)",
-            }} />
-            <span style={{ fontSize: "7px", letterSpacing: "0.4em", textTransform: "uppercase",
-              color: "rgba(255,255,255,0.15)" }}>
-              {isMobile ? "Swipe" : "Scroll"}
+        {/* Subtitle row */}
+        <div style={{ display:"flex", alignItems:"center", gap:"24px", marginTop:"18px", zIndex:3 }}>
+          <p ref={subtitleRef} style={{
+            fontSize:isMobile?"10px":isTablet?"10px":"12px",
+            letterSpacing:"0.48em",textTransform:"uppercase",
+            color:"rgba(255,255,255,0.22)",margin:0,marginLeft:100
+          }}>Web Developer</p>
+          <span style={{ width:"4px",height:"4px",borderRadius:"50%",background:"rgba(44,85,132,0.8)",display:"inline-block" }}/>
+        </div>
+
+        {/* Bottom row */}
+        <div ref={bottomRowRef} style={{
+          position:"absolute",
+          bottom:isMobile?"60px":isTablet?"80px":"88px",
+          left:0,right:0,
+          padding:isMobile?"0 20px":isTablet?"0 32px":"0 52px",
+          display:"flex",
+          justifyContent:isMobile?"center":"space-between",
+          alignItems:"flex-end",zIndex:3,
+        }}>
+          {!isMobile && <div><p style={ml}>Based in</p><p style={mv}>Algeria</p></div>}
+
+          <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"8px"}}>
+            <div style={{width:"1px",height:isMobile?"36px":"52px",background:"linear-gradient(to bottom, rgba(44,85,132,0.8), transparent)"}}/>
+            <span style={{fontSize:"7px",letterSpacing:"0.4em",textTransform:"uppercase",color:"rgba(255,255,255,0.13)"}}>
+              {isMobile?"Swipe":"Scroll"}
             </span>
           </div>
 
-          {/* Hide "View Projects" link on mobile */}
           {!isMobile && (
-            <div style={{ textAlign: "right" }}>
-              <p style={{ fontSize: "9px", letterSpacing: "0.45em", textTransform: "uppercase",
-                color: "rgba(255,255,255,0.22)", marginBottom: "6px" }}>Work</p>
-              <Link
-                to="/projects"
-                style={{ fontSize: "11px", letterSpacing: "0.28em", textTransform: "uppercase",
-                  color: "rgba(255,255,255,0.58)", textDecoration: "none",
-                  display: "inline-flex", alignItems: "center", gap: "8px" }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = "#2C5584";
-                  gsap.to(e.currentTarget, { x: 7, duration: 0.3, ease: "power2.out" });
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = "rgba(255,255,255,0.58)";
-                  gsap.to(e.currentTarget, { x: 0, duration: 0.4, ease: "power2.out" });
-                }}
-              >
-                View Projects <span>→</span>
-              </Link>
+            <div style={{textAlign:"right"}}>
+              <p style={ml}>Work</p>
+              <Link to="/projects"
+                style={{...mv,textDecoration:"none",display:"inline-flex",alignItems:"center",gap:"8px"}}
+                onMouseEnter={(e)=>{e.currentTarget.style.color="#2C5584";gsap.to(e.currentTarget,{x:6,duration:0.3,ease:"power2.out"});}}
+                onMouseLeave={(e)=>{e.currentTarget.style.color="rgba(255,255,255,0.58)";gsap.to(e.currentTarget,{x:0,duration:0.3});}}
+              >View Projects <span>→</span></Link>
             </div>
           )}
-        </div>
-
-        {/* ── Marquee ── */}
-        <div
-          ref={marqueeRef}
-          onMouseEnter={() => marqueeAnimRef.current?.pause()}
-          onMouseLeave={() => marqueeAnimRef.current?.resume()}
-          style={{
-            position: "absolute", bottom: 0, left: 0, right: 0,
-            overflow: "hidden",
-            borderTop: "1px solid rgba(255,255,255,0.05)",
-            padding: isMobile ? "10px 0" : "13px 0",
-            opacity: 0, zIndex: 1,
-          }}
-        >
-          <div
-            ref={marqueeInner}
-            style={{ display: "flex", gap: isMobile ? "28px" : "48px",
-              whiteSpace: "nowrap", width: "max-content" }}
-          >
-            {[...MARQUEE, ...MARQUEE, ...MARQUEE].map((item, i) => (
-              <span key={i} style={{
-                fontSize: isMobile ? "7px" : "9px",
-                letterSpacing: "0.45em", textTransform: "uppercase",
-                color: item === "✦" ? "#2C5584" : "rgba(255,255,255,0.15)",
-              }}>
-                {item}
-              </span>
-            ))}
-          </div>
         </div>
       </section>
     </>
   );
-}
+});
+
+export default Hero;
