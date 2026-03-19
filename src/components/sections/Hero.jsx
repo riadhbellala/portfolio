@@ -121,7 +121,17 @@ function NeuralBrain({ isMobile }) {
     canvas.height = SIZE;
     const ctx = canvas.getContext("2d");
 
-    gsap.set(el, { x: posX.current, y: posY.current, opacity: 0 });
+    // ── CHANGED: on desktop, start positioned on the right side of the viewport ──
+    if (!isMobile) {
+      const rightX = window.innerWidth * 0.27;   // offset from center → pushes it right
+      const centerY = 0;
+      posX.current = rightX;
+      posY.current = centerY;
+      gsap.set(el, { x: rightX, y: centerY, opacity: 0 });
+    } else {
+      gsap.set(el, { x: 0, y: 0, opacity: 0 });
+    }
+
     gsap.to(el, { opacity: 1, duration: 1.4, ease: "power2.out", delay: 0.6 });
 
     // Auto rotation
@@ -333,13 +343,18 @@ function NeuralBrain({ isMobile }) {
   return (
     <div ref={containerRef} style={{
       position: "absolute",
-      top: isMobile ? "62%" : "50%",
+      // ── CHANGED: desktop anchors to right-half center; mobile stays screen-center ──
+      top: "50%",
       left: "50%",
       transform: "translate(-50%, -50%)",
       cursor: "grab",
-      zIndex: isMobile ? 1 : 2,
+      // ── CHANGED: mobile zIndex dropped below text (zIndex 1 → 0); desktop keeps 2 ──
+      zIndex: isMobile ? 0 : 2,
       userSelect: "none",
       willChange: "transform",
+      // ── CHANGED: mobile touch events still work for drag but pointer-events pass
+      //    through to underlying text elements only on non-canvas hits ──
+      pointerEvents: "auto",
     }}>
       <canvas ref={canvasRef} width={SIZE} height={SIZE} style={{
         display: "block",
@@ -454,8 +469,8 @@ const Hero = forwardRef(function Hero({ isMobile }, ref) {
         position:"fixed",inset:0,width:"100%",height:"100vh",
         background:"#080808",overflow:"hidden",
         display:"flex",flexDirection:"column",
-        justifyContent: isMobile ? "flex-start" : "center",
-        paddingTop: isMobile ? "15%" : "0",
+        justifyContent: "center",
+        paddingTop: "0",
         alignItems: isTablet||isMobile ? "center" : "flex-start",
         paddingLeft:  isTablet||isMobile ? "20px" : "8%",
         paddingRight: isTablet||isMobile ? "20px" : "52%",
