@@ -14,7 +14,7 @@ const PROJECTS = [
     description: "A community platform for students passionate about technology, creativity, leadership, and innovation. Built to connect the next generation of builders.",
     tech: ["React", "Vite", "Tailwind","GSAP","Supabase"],
     url: "https://lyceum-club.vercel.app",
-    image: "/src/assets/project-lyceum.png", // ← replace with: "/src/assets/project-lyceum.png"
+    image: "/assets/project-lyceum.png", // ← replace with: "/src/assets/project-lyceum.png"
     accent: "#61DAFB",
     year: "2024",
   },
@@ -40,7 +40,7 @@ const PROJECTS = [
     url: "https://lyceum-club.vercel.app",
     image: "/src/assets/project-lyceum.png", // ← replace with: "/src/assets/project-lyceum.png"
     accent: "#61DAFB",
-    year: "2024",
+    year: "2026",
   },
   {
     id: 2,
