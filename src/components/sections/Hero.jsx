@@ -485,11 +485,6 @@ const Hero = forwardRef(function Hero({ isMobile }, ref) {
         {/* Neural brain */}
         <NeuralBrain isMobile={isMobile} />
 
-        {/* Index */}
-        <span style={{
-          fontSize:"9px",letterSpacing:"0.5em",textTransform:"uppercase",
-          color:"rgba(44,85,132,0.7)",marginBottom:"20px",zIndex:3,display:"block",
-        }}>01 / Portfolio</span>
 
         {/* Big letters */}
         <div style={{
