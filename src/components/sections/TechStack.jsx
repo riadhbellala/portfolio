@@ -131,10 +131,6 @@ const TechStack = forwardRef(function TechStack({ isMobile }, ref) {
         zIndex:3,
         textAlign:isMobile?"center":"left",
       }}>
-        <span ref={labelRef} style={{
-          fontSize:"9px",letterSpacing:"0.55em",textTransform:"uppercase",
-          color:"#2C5584",display:"block",marginBottom:"14px",
-        }}>03 — Stack</span>
         <h2 ref={headingRef} style={{
           fontSize:isMobile?"clamp(1.1rem,4vw,1.6rem)":isTablet?"clamp(1.2rem,3vw,2rem)":"clamp(1.4rem,2.5vw,2.8rem)",
           fontWeight:900,letterSpacing:"-0.03em",

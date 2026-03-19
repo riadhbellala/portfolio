@@ -135,12 +135,6 @@ const Contact = forwardRef(function Contact({ isMobile }, ref) {
         }}>04 — Contact</span>
       </div>
 
-      {/* Index */}
-      <span ref={indexRef} style={{
-        fontSize:"9px",letterSpacing:"0.55em",textTransform:"uppercase",
-        color:"rgba(44,85,132,0.6)",marginBottom:"20px",display:"block",
-      }}>04 / Get in touch</span>
-
       {/* Big headline */}
       <div style={{
         display:"flex",flexWrap:"wrap",

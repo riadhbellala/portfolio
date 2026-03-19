@@ -24,207 +24,295 @@ function useBreakpoint() {
 
 const LETTERS = ["R","I","A","D","H"];
 
-// ── Neural Brain Shape — draggable, animated, living ─────────────────────────
 function NeuralBrain({ isMobile }) {
   const containerRef = useRef(null);
-  const isDrag       = useRef(false);
-  const floatRef     = useRef(null);
   const canvasRef    = useRef(null);
   const animFrameRef = useRef(null);
+  const floatRef     = useRef(null);
+  const isDrag       = useRef(false);
+  const rotX         = useRef(-15);
+  const rotY         = useRef(20);
+  const velX         = useRef(0);
+  const velY         = useRef(0);
+  const lastMX       = useRef(0);
+  const lastMY       = useRef(0);
+  const posX         = useRef(0);
+  const posY         = useRef(0);
 
-  // Node positions for the neural network
-  const nodes = useRef([
-    // core
-    { x:200, y:180, r:7,  layer:0 },
-    { x:200, y:220, r:5,  layer:0 },
-    // left cluster
-    { x:100, y:100, r:6,  layer:1 },
-    { x:80,  y:160, r:4,  layer:1 },
-    { x:110, y:240, r:5,  layer:1 },
-    { x:90,  y:300, r:4,  layer:1 },
-    // right cluster
-    { x:300, y:90,  r:5,  layer:2 },
-    { x:320, y:160, r:6,  layer:2 },
-    { x:310, y:240, r:4,  layer:2 },
-    { x:290, y:310, r:5,  layer:2 },
-    // top
-    { x:180, y:50,  r:4,  layer:3 },
-    { x:220, y:40,  r:3,  layer:3 },
-    { x:160, y:80,  r:3,  layer:3 },
-    { x:240, y:70,  r:4,  layer:3 },
-    // bottom
-    { x:170, y:350, r:4,  layer:4 },
-    { x:210, y:360, r:3,  layer:4 },
-    { x:240, y:340, r:4,  layer:4 },
-    // satellites
-    { x:50,  y:200, r:3,  layer:5 },
-    { x:350, y:200, r:3,  layer:5 },
-    { x:200, y:400, r:3,  layer:5 },
+  const SIZE = isMobile ? 260 : 680;
+  const CX   = SIZE / 2;
+  const CY   = SIZE / 2;
+  const FL   = 800;
+
+  const nodes3D = useRef([
+    { x:0,    y:0,    z:0,    r:11, phase:0.0 },
+    { x:30,   y:45,   z:15,   r:8,  phase:0.5 },
+    { x:-38,  y:30,   z:22,   r:7,  phase:1.0 },
+    { x:15,   y:-45,  z:-15,  r:8,  phase:1.5 },
+    { x:120,  y:0,    z:0,    r:9,  phase:0.2 },
+    { x:-120, y:0,    z:0,    r:9,  phase:0.7 },
+    { x:0,    y:120,  z:0,    r:8,  phase:1.2 },
+    { x:0,    y:-120, z:0,    r:8,  phase:1.7 },
+    { x:0,    y:0,    z:120,  r:9,  phase:0.4 },
+    { x:0,    y:0,    z:-120, r:8,  phase:0.9 },
+    { x:180,  y:90,   z:45,   r:7,  phase:0.3 },
+    { x:-165, y:105,  z:30,   r:7,  phase:0.8 },
+    { x:90,   y:-180, z:60,   r:7,  phase:1.3 },
+    { x:-75,  y:165,  z:90,   r:6,  phase:1.8 },
+    { x:150,  y:-90,  z:-120, r:7,  phase:0.6 },
+    { x:-135, y:-120, z:-90,  r:6,  phase:1.1 },
+    { x:105,  y:150,  z:-105, r:7,  phase:1.6 },
+    { x:-90,  y:-150, z:120,  r:6,  phase:2.1 },
+    { x:255,  y:45,   z:75,   r:5,  phase:0.1 },
+    { x:-240, y:60,   z:90,   r:5,  phase:0.6 },
+    { x:75,   y:270,  z:45,   r:5,  phase:1.1 },
+    { x:-60,  y:-255, z:75,   r:4,  phase:1.6 },
+    { x:195,  y:-195, z:90,   r:5,  phase:2.1 },
+    { x:-180, y:195,  z:-105, r:4,  phase:2.6 },
+    { x:240,  y:-90,  z:-120, r:5,  phase:0.8 },
+    { x:-225, y:90,   z:-135, r:4,  phase:1.3 },
+    { x:60,   y:240,  z:-150, r:4,  phase:1.8 },
+    { x:-45,  y:-225, z:165,  r:4,  phase:2.3 },
+    { x:300,  y:150,  z:120,  r:4,  phase:0.4 },
+    { x:-285, y:165,  z:135,  r:4,  phase:0.9 },
+    { x:135,  y:315,  z:90,   r:4,  phase:1.4 },
+    { x:-120, y:-300, z:105,  r:4,  phase:1.9 },
+    { x:315,  y:-135, z:-90,  r:4,  phase:2.4 },
   ]).current;
 
-  // Connections between node indices
-  const connections = useRef([
-    [0,1],[0,2],[0,6],[0,10],[0,3],
-    [1,4],[1,7],[1,14],[1,9],
-    [2,3],[2,10],[2,17],
-    [3,4],[3,5],[3,17],
-    [4,5],[4,14],
-    [5,17],[5,15],
-    [6,7],[6,10],[6,11],
-    [7,8],[7,18],
-    [8,9],[8,16],
-    [9,15],[9,18],
-    [10,11],[10,12],[10,13],
-    [11,13],[12,2],[13,6],
-    [14,15],[15,16],[16,9],
-    [17,3],[18,7],[19,15],
-    [0,13],[1,12],[5,19],[8,19],
-  ]).current;
+  const connections = useRef((() => {
+    const list = [];
+    for (let i = 0; i < nodes3D.length; i++) {
+      for (let j = i + 1; j < nodes3D.length; j++) {
+        const dx = nodes3D[i].x - nodes3D[j].x;
+        const dy = nodes3D[i].y - nodes3D[j].y;
+        const dz = nodes3D[i].z - nodes3D[j].z;
+        const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+        if (dist < 260) list.push([i, j, dist]);
+      }
+    }
+    return list;
+  })()).current;
+
+  const signals = useRef(
+    connections.map(conn => ({
+      conn,
+      t: Math.random(),
+      speed: 0.004 + Math.random() * 0.005,
+      active: Math.random() > 0.55,
+    }))
+  ).current;
+
+  function project(x, y, z, rxRad, ryRad) {
+    const x1 = x * Math.cos(ryRad) + z * Math.sin(ryRad);
+    const z1 = -x * Math.sin(ryRad) + z * Math.cos(ryRad);
+    const y2 = y * Math.cos(rxRad) - z1 * Math.sin(rxRad);
+    const z2 = y * Math.sin(rxRad) + z1 * Math.cos(rxRad);
+    const scale = FL / (FL + z2 + 200);
+    return { sx: CX + x1 * scale, sy: CY + y2 * scale, scale, z: z2 };
+  }
 
   useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
+    const el     = containerRef.current;
+    const canvas = canvasRef.current;
+    if (!el || !canvas) return;
 
-    const size = isMobile ? 0.55 : 1;
-    gsap.set(el, { x: isMobile ? 0 : 280, y: isMobile ? 0 : -30, scale: size, opacity: 0 });
+    canvas.width  = SIZE;
+    canvas.height = SIZE;
+    const ctx = canvas.getContext("2d");
 
-    // Float the whole brain
-    floatRef.current = gsap.to(el, {
-      y: `+=${isMobile ? 12 : 20}`,
-      rotation: 4,
-      duration: 4,
+    gsap.set(el, { x: posX.current, y: posY.current, opacity: 0 });
+    gsap.to(el, { opacity: 1, duration: 1.4, ease: "power2.out", delay: 0.6 });
+
+    // Auto rotation
+    floatRef.current = gsap.to(rotY, {
+      current: rotY.current + 360,
+      duration: 40,
+      ease: "none",
+      repeat: -1,
+    });
+
+    // Bob — both mobile and desktop
+    const bobAnim = gsap.to(el, {
+      y: `+=${isMobile ? 10 : 22}`,
+      duration: isMobile ? 3 : 4.5,
       ease: "sine.inOut",
-      repeat: -1, yoyo: true,
+      repeat: -1,
+      yoyo: true,
       delay: 0.5,
     });
 
-    // Reveal
-    gsap.to(el, { opacity: 1, duration: 1.2, ease: "power2.out", delay: 0.8 });
-
-    // Make draggable
-    Draggable.create(el, {
+    // Draggable — BOTH mobile and desktop
+    const draggable = Draggable.create(el, {
       type: "x,y",
       inertia: true,
       cursor: "grab",
       activeCursor: "grabbing",
-      onDragStart() {
+      onDragStart(e) {
         isDrag.current = true;
         floatRef.current?.pause();
-        gsap.to(el, { scale: size * 1.05, duration: 0.3, ease: "power2.out" });
+        bobAnim.pause();
+        lastMX.current = e.clientX ?? e.touches?.[0]?.clientX ?? 0;
+        lastMY.current = e.clientY ?? e.touches?.[0]?.clientY ?? 0;
+        gsap.to(el, { scale: 1.04, duration: 0.3, ease: "power2.out" });
+      },
+      onDrag(e) {
+        const cx = e.clientX ?? e.touches?.[0]?.clientX ?? lastMX.current;
+        const cy = e.clientY ?? e.touches?.[0]?.clientY ?? lastMY.current;
+        const dx = cx - lastMX.current;
+        const dy = cy - lastMY.current;
+        velX.current = dy * 0.35;
+        velY.current = dx * 0.35;
+        rotX.current += velX.current;
+        rotY.current += velY.current;
+        lastMX.current = cx;
+        lastMY.current = cy;
       },
       onDragEnd() {
         isDrag.current = false;
         gsap.to(el, {
-          scale: size, duration: 0.8, ease: "elastic.out(1,0.4)",
-          onComplete: () => floatRef.current?.play(),
+          scale: 1, duration: 0.8, ease: "elastic.out(1,0.4)",
+          onComplete: () => {
+            floatRef.current?.play();
+            bobAnim.play();
+          },
         });
+        gsap.to(velX, {
+          current: 0, duration: 2.5, ease: "power2.out",
+          onUpdate: () => {
+            rotX.current += velX.current;
+            rotY.current += velY.current;
+          },
+        });
+        gsap.to(velY, { current: 0, duration: 2.5, ease: "power2.out" });
       },
-    });
+    })[0];
 
-    // Parallax
-    const onMove = (e) => {
-      if (isDrag.current) return;
-      const cx = window.innerWidth / 2;
+    // Mouse parallax — desktop only
+    const onMouseMove = (e) => {
+      if (isDrag.current || isMobile) return;
+      const cx = window.innerWidth  / 2;
       const cy = window.innerHeight / 2;
       gsap.to(el, {
-        x: (isMobile ? 0 : 280) + (e.clientX - cx) * 0.04,
-        y: (isMobile ? 0 : -30) + (e.clientY - cy) * 0.03,
-        duration: 1.8, ease: "power1.out", overwrite: "auto",
+        x: posX.current + (e.clientX - cx) * 0.045,
+        y: posY.current + (e.clientY - cy) * 0.03,
+        duration: 2, ease: "power1.out", overwrite: "auto",
       });
+      rotY.current += (e.clientX - cx) * 0.0008;
+      rotX.current += (e.clientY - cy) * 0.0005;
     };
-    if (!isMobile) window.addEventListener("mousemove", onMove);
+    if (!isMobile) window.addEventListener("mousemove", onMouseMove);
 
-    // Animate pulse signals traveling along connections
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    canvas.width  = 420;
-    canvas.height = 420;
-    const ctx = canvas.getContext("2d");
-
-    // Traveling signals state
-    const signals = connections.map((conn) => ({
-      conn,
-      t: Math.random(),
-      speed: 0.003 + Math.random() * 0.004,
-      active: Math.random() > 0.6,
-      opacity: 0,
-    }));
-
-    // Node pulse phases
-    const phases = nodes.map(() => Math.random() * Math.PI * 2);
-
+    const nodeScale = isMobile ? 0.35 : 1;
     let frame = 0;
+    const nodePhases = nodes3D.map(n => n.phase);
+
     function draw() {
-      ctx.clearRect(0, 0, 420, 420);
+      ctx.clearRect(0, 0, SIZE, SIZE);
       frame++;
 
-      // Draw connections
-      connections.forEach(([a, b], i) => {
-        const na = nodes[a]; const nb = nodes[b];
-        const alpha = 0.08 + Math.sin(frame * 0.01 + i * 0.3) * 0.04;
+      const rxRad = (rotX.current * Math.PI) / 180;
+      const ryRad = (rotY.current * Math.PI) / 180;
+
+      const projected = nodes3D.map(n => project(
+        n.x * nodeScale,
+        n.y * nodeScale,
+        n.z * nodeScale,
+        rxRad, ryRad
+      ));
+
+      const order = projected
+        .map((p, i) => ({ i, z: p.z }))
+        .sort((a, b) => a.z - b.z);
+
+      const connsSorted = [...connections].sort((a, b) => {
+        const za = (projected[a[0]].z + projected[a[1]].z) / 2;
+        const zb = (projected[b[0]].z + projected[b[1]].z) / 2;
+        return za - zb;
+      });
+
+      // Connections
+      connsSorted.forEach(([i, j]) => {
+        const pa = projected[i];
+        const pb = projected[j];
+        const avgZ = (pa.z + pb.z) / 2;
+        const depthFade = Math.max(0, Math.min(1, (avgZ + 500) / 900));
+        const alpha = depthFade * (0.07 + Math.sin(frame * 0.008 + i * 0.2) * 0.03);
         ctx.beginPath();
-        ctx.moveTo(na.x, na.y);
-        ctx.lineTo(nb.x, nb.y);
-        ctx.strokeStyle = `rgba(44,85,132,${alpha})`;
-        ctx.lineWidth = 0.8;
+        ctx.moveTo(pa.sx, pa.sy);
+        ctx.lineTo(pb.sx, pb.sy);
+        ctx.strokeStyle = `rgba(44,100,200,${alpha})`;
+        ctx.lineWidth   = 0.8 * Math.min(pa.scale, pb.scale) * 1.5;
         ctx.stroke();
       });
 
-      // Draw traveling signals
+      // Signals
       signals.forEach((sig) => {
         if (!sig.active) {
-          if (Math.random() < 0.005) { sig.active = true; sig.t = 0; }
+          if (Math.random() < 0.004) { sig.active = true; sig.t = 0; }
           return;
         }
         sig.t += sig.speed;
         if (sig.t >= 1) { sig.active = false; sig.t = 0; return; }
 
         const [a, b] = sig.conn;
-        const na = nodes[a]; const nb = nodes[b];
-        const x = na.x + (nb.x - na.x) * sig.t;
-        const y = na.y + (nb.y - na.y) * sig.t;
-        const alpha = Math.sin(sig.t * Math.PI);
+        const pa = projected[a];
+        const pb = projected[b];
+        const sx = pa.sx + (pb.sx - pa.sx) * sig.t;
+        const sy = pa.sy + (pb.sy - pa.sy) * sig.t;
+        const sz = pa.z  + (pb.z  - pa.z)  * sig.t;
+        const depthFade = Math.max(0, Math.min(1, (sz + 500) / 900));
+        const alpha = Math.sin(sig.t * Math.PI) * depthFade;
+        const sc    = pa.scale + (pb.scale - pa.scale) * sig.t;
 
         ctx.beginPath();
-        ctx.arc(x, y, 2.5, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(100,160,255,${alpha * 0.9})`;
+        ctx.arc(sx, sy, 3 * sc, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(120,180,255,${alpha * 0.95})`;
         ctx.fill();
 
-        // Glow
-        const grad = ctx.createRadialGradient(x,y,0, x,y,8);
-        grad.addColorStop(0, `rgba(100,160,255,${alpha * 0.4})`);
+        const grad = ctx.createRadialGradient(sx, sy, 0, sx, sy, 12 * sc);
+        grad.addColorStop(0, `rgba(100,170,255,${alpha * 0.5})`);
         grad.addColorStop(1, "transparent");
         ctx.beginPath();
-        ctx.arc(x, y, 8, 0, Math.PI * 2);
+        ctx.arc(sx, sy, 12 * sc, 0, Math.PI * 2);
         ctx.fillStyle = grad;
         ctx.fill();
       });
 
-      // Draw nodes
-      nodes.forEach((n, i) => {
-        const pulse = Math.sin(frame * 0.02 + phases[i]) * 0.5 + 0.5;
-        const r = n.r + pulse * 2;
-        const alpha = 0.5 + pulse * 0.5;
+      // Nodes
+      order.forEach(({ i }) => {
+        const n     = nodes3D[i];
+        const p     = projected[i];
+        const pulse = Math.sin(frame * 0.025 + nodePhases[i]) * 0.5 + 0.5;
+        const r     = (n.r + pulse * 2.5) * p.scale * 2.2;
+        const depthFade = Math.max(0, Math.min(1, (p.z + 500) / 900));
+        const alpha = (0.4 + pulse * 0.6) * depthFade;
 
-        // Outer glow
-        const grad = ctx.createRadialGradient(n.x,n.y,0, n.x,n.y,r*4);
-        grad.addColorStop(0, `rgba(44,120,200,${alpha * 0.3})`);
+        const glowR = r * 4;
+        const grad = ctx.createRadialGradient(p.sx, p.sy, 0, p.sx, p.sy, glowR);
+        grad.addColorStop(0, `rgba(44,120,220,${alpha * 0.35})`);
+        grad.addColorStop(0.5, `rgba(44,80,180,${alpha * 0.15})`);
         grad.addColorStop(1, "transparent");
         ctx.beginPath();
-        ctx.arc(n.x, n.y, r * 4, 0, Math.PI * 2);
+        ctx.arc(p.sx, p.sy, glowR, 0, Math.PI * 2);
         ctx.fillStyle = grad;
         ctx.fill();
 
-        // Core
+        const coreGrad = ctx.createRadialGradient(
+          p.sx - r * 0.3, p.sy - r * 0.3, 0,
+          p.sx, p.sy, r
+        );
+        coreGrad.addColorStop(0, `rgba(160,210,255,${alpha * 0.95})`);
+        coreGrad.addColorStop(0.4, `rgba(60,130,220,${alpha * 0.9})`);
+        coreGrad.addColorStop(1, `rgba(20,60,140,${alpha * 0.7})`);
         ctx.beginPath();
-        ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(44,100,180,${alpha})`;
+        ctx.arc(p.sx, p.sy, r, 0, Math.PI * 2);
+        ctx.fillStyle = coreGrad;
         ctx.fill();
 
-        // Bright center
         ctx.beginPath();
-        ctx.arc(n.x, n.y, r * 0.4, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(140,200,255,${alpha * 0.9})`;
+        ctx.arc(p.sx - r * 0.28, p.sy - r * 0.28, r * 0.32, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(220,240,255,${alpha * 0.6})`;
         ctx.fill();
       });
 
@@ -234,25 +322,30 @@ function NeuralBrain({ isMobile }) {
 
     return () => {
       floatRef.current?.kill();
+      bobAnim.kill();
+      draggable?.kill();
       cancelAnimationFrame(animFrameRef.current);
-      if (!isMobile) window.removeEventListener("mousemove", onMove);
+      if (!isMobile) window.removeEventListener("mousemove", onMouseMove);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMobile]);
 
   return (
     <div ref={containerRef} style={{
       position: "absolute",
-      top: "50%", left: isMobile ? "50%" : "auto",
-      right: isMobile ? "auto" : "6%",
+      top: isMobile ? "62%" : "50%",
+      left: "50%",
       transform: "translate(-50%, -50%)",
       cursor: "grab",
-      zIndex: 2,
+      zIndex: isMobile ? 1 : 2,
       userSelect: "none",
+      willChange: "transform",
     }}>
-      <canvas ref={canvasRef} width={420} height={420} style={{
+      <canvas ref={canvasRef} width={SIZE} height={SIZE} style={{
         display: "block",
-        filter: "drop-shadow(0 0 30px rgba(44,100,200,0.4))",
+        filter: isMobile
+          ? "drop-shadow(0 0 30px rgba(44,100,200,0.4))"
+          : "drop-shadow(0 0 60px rgba(44,100,200,0.55)) drop-shadow(0 0 120px rgba(44,80,180,0.25))",
       }}/>
     </div>
   );
@@ -289,25 +382,18 @@ const Hero = forwardRef(function Hero({ isMobile }, ref) {
     gsap.set(subtitleRef.current, { opacity:0, y:10 });
     gsap.set(taglineRef.current,  { opacity:0, x:-20 });
     gsap.set(bottomRowRef.current,{ opacity:0, y:24 });
- 
 
     const tl = gsap.timeline();
-
     tl.to(lettersRef.current, {
       y:0, rotateX:0,
       duration:1.1, ease:"power4.out",
       stagger:{ each:0.07, from:"start" },
     });
-
-    tl.to(lineRef.current, { scaleX:1, duration:0.7, ease:"power3.inOut" }, "-=0.5");
-
+    tl.to(lineRef.current,     { scaleX:1, duration:0.7, ease:"power3.inOut" }, "-=0.5");
     tl.to(subtitleRef.current, { opacity:1, y:0, duration:0.7, ease:"power3.out" }, "-=0.4");
     tl.to(taglineRef.current,  { opacity:1, x:0, duration:0.6, ease:"power3.out" }, "-=0.5");
-
-    tl.to(bottomRowRef.current, { opacity:1, y:0, duration:0.7, ease:"power3.out" }, "-=0.4");
-
+    tl.to(bottomRowRef.current,{ opacity:1, y:0, duration:0.7, ease:"power3.out" }, "-=0.4");
   }
-
 
   useEffect(() => {
     if (isMobile) return;
@@ -368,15 +454,16 @@ const Hero = forwardRef(function Hero({ isMobile }, ref) {
         position:"fixed",inset:0,width:"100%",height:"100vh",
         background:"#080808",overflow:"hidden",
         display:"flex",flexDirection:"column",
-        justifyContent:"center",
+        justifyContent: isMobile ? "flex-start" : "center",
+        paddingTop: isMobile ? "15%" : "0",
         alignItems: isTablet||isMobile ? "center" : "flex-start",
-        paddingLeft: isTablet||isMobile ? "20px" : "8%",
+        paddingLeft:  isTablet||isMobile ? "20px" : "8%",
         paddingRight: isTablet||isMobile ? "20px" : "52%",
         cursor: isMobile||isTablet ? "auto" : "none",
-        perspective:"1000px",
+        perspective: "1000px",
       }}>
 
-        {/* Ambient glow follows cursor */}
+        {/* Ambient glow */}
         <div ref={glowRef} aria-hidden="true" style={{
           position:"absolute",top:0,left:0,
           width:"700px",height:"700px",borderRadius:"50%",
@@ -387,30 +474,29 @@ const Hero = forwardRef(function Hero({ isMobile }, ref) {
 
         {/* Corner brackets */}
         {[
-          {top:"24px",left:"24px",   borderTop:"1px solid rgba(44,85,132,0.28)",borderLeft:"1px solid rgba(44,85,132,0.28)"},
-          {top:"24px",right:"24px",  borderTop:"1px solid rgba(44,85,132,0.28)",borderRight:"1px solid rgba(44,85,132,0.28)"},
-          {bottom:"24px",left:"24px",borderBottom:"1px solid rgba(44,85,132,0.28)",borderLeft:"1px solid rgba(44,85,132,0.28)"},
+          {top:"24px",left:"24px",    borderTop:"1px solid rgba(44,85,132,0.28)",borderLeft:"1px solid rgba(44,85,132,0.28)"},
+          {top:"24px",right:"24px",   borderTop:"1px solid rgba(44,85,132,0.28)",borderRight:"1px solid rgba(44,85,132,0.28)"},
+          {bottom:"24px",left:"24px", borderBottom:"1px solid rgba(44,85,132,0.28)",borderLeft:"1px solid rgba(44,85,132,0.28)"},
           {bottom:"24px",right:"24px",borderBottom:"1px solid rgba(44,85,132,0.28)",borderRight:"1px solid rgba(44,85,132,0.28)"},
-        ].map((s,i)=>(
+        ].map((s,i) => (
           <div key={i} aria-hidden="true" style={{position:"absolute",width:"20px",height:"20px",pointerEvents:"none",zIndex:1,...s}}/>
         ))}
 
-        {/* Neural brain — right side */}
-        <NeuralBrain isMobile={isMobile || isTablet} />
+        {/* Neural brain */}
+        <NeuralBrain isMobile={isMobile} />
 
-        {/* Index number */}
+        {/* Index */}
         <span style={{
           fontSize:"9px",letterSpacing:"0.5em",textTransform:"uppercase",
-          color:"rgba(44,85,132,0.7)",marginBottom:"20px",zIndex:3,
-          display:"block",
-        }}></span>
+          color:"rgba(44,85,132,0.7)",marginBottom:"20px",zIndex:3,display:"block",
+        }}>01 / Portfolio</span>
 
         {/* Big letters */}
         <div style={{
-          display:"flex",justifyContent: isTablet||isMobile?"center":"flex-start",
+          display:"flex",
+          justifyContent: isTablet||isMobile ? "center" : "flex-start",
           alignItems:"center",
           gap:"clamp(2px,0.6vw,10px)",
-          padding:"0",
           position:"relative",zIndex:3,
           perspective:"800px",
           overflow:"visible",
@@ -420,13 +506,13 @@ const Hero = forwardRef(function Hero({ isMobile }, ref) {
               style={{
                 display:"inline-block",
                 fontSize: isMobile
-                  ?"clamp(3.8rem,20vw,6rem)"
-                  :isTablet
-                  ?"clamp(4rem,14vw,9rem)"
-                  :"clamp(5rem,12vw,13rem)",
+                  ? "clamp(3.8rem,20vw,6rem)"
+                  : isTablet
+                  ? "clamp(4rem,14vw,9rem)"
+                  : "clamp(5rem,12vw,13rem)",
                 fontWeight:900,lineHeight:0.88,letterSpacing:"-0.04em",
                 color:"transparent",
-                WebkitTextStroke: isMobile?"1px rgba(255,255,255,0.6)":"1px rgba(255,255,255,0.75)",
+                WebkitTextStroke: isMobile ? "1px rgba(255,255,255,0.6)" : "1px rgba(255,255,255,0.75)",
                 userSelect:"none",willChange:"transform",
                 transition:"color 0.2s, -webkit-text-stroke 0.2s",
                 transformStyle:"preserve-3d",
@@ -439,8 +525,7 @@ const Hero = forwardRef(function Hero({ isMobile }, ref) {
 
         {/* Thin rule */}
         <div ref={lineRef} style={{
-          width:"clamp(180px,40vw,420px)",
-          height:"1px",
+          width:"clamp(180px,40vw,420px)",height:"1px",
           background:"linear-gradient(90deg,rgba(44,85,132,0.8),rgba(44,85,132,0.2),transparent)",
           marginTop:"16px",zIndex:3,
         }}/>
@@ -448,21 +533,24 @@ const Hero = forwardRef(function Hero({ isMobile }, ref) {
         {/* Subtitle row */}
         <div style={{ display:"flex", alignItems:"center", gap:"24px", marginTop:"18px", zIndex:3 }}>
           <p ref={subtitleRef} style={{
-            fontSize:isMobile?"10px":isTablet?"10px":"12px",
+            fontSize: isMobile?"10px":isTablet?"10px":"12px",
             letterSpacing:"0.48em",textTransform:"uppercase",
-            color:"rgba(255,255,255,0.22)",margin:0,marginLeft:100
+            color:"rgba(255,255,255,0.22)",margin:0,
           }}>Web Developer</p>
-          <span style={{ width:"4px",height:"4px",borderRadius:"50%",background:"rgba(44,85,132,0.8)",display:"inline-block" }}/>
+          <span ref={taglineRef} style={{
+            width:"4px",height:"4px",borderRadius:"50%",
+            background:"rgba(44,85,132,0.8)",display:"inline-block",
+          }}/>
         </div>
 
         {/* Bottom row */}
         <div ref={bottomRowRef} style={{
           position:"absolute",
-          bottom:isMobile?"60px":isTablet?"80px":"88px",
+          bottom: isMobile?"16px":isTablet?"80px":"88px",
           left:0,right:0,
-          padding:isMobile?"0 20px":isTablet?"0 32px":"0 52px",
+          padding: isMobile?"0 20px":isTablet?"0 32px":"0 52px",
           display:"flex",
-          justifyContent:isMobile?"center":"space-between",
+          justifyContent: isMobile?"center":"space-between",
           alignItems:"flex-end",zIndex:3,
         }}>
           {!isMobile && <div><p style={ml}>Based in</p><p style={mv}>Algeria</p></div>}
@@ -470,7 +558,7 @@ const Hero = forwardRef(function Hero({ isMobile }, ref) {
           <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"8px"}}>
             <div style={{width:"1px",height:isMobile?"36px":"52px",background:"linear-gradient(to bottom, rgba(44,85,132,0.8), transparent)"}}/>
             <span style={{fontSize:"7px",letterSpacing:"0.4em",textTransform:"uppercase",color:"rgba(255,255,255,0.13)"}}>
-              {isMobile?"Swipe":"Scroll"}
+              {isMobile ? "Swipe" : "Scroll"}
             </span>
           </div>
 
