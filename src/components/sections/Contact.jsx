@@ -31,7 +31,7 @@ const Contact = forwardRef(function Contact({ isMobile }, ref) {
   const hasEntered  = useRef(false);
 
   // Split "Let's Talk" into chars
-  const BIG_TEXT = "Let's Talk.";
+  const BIG_TEXT = "Contact Me .";
   const chars = BIG_TEXT.split("");
 
   useEffect(() => {
@@ -101,39 +101,6 @@ const Contact = forwardRef(function Contact({ isMobile }, ref) {
         background:"linear-gradient(90deg,transparent,rgba(44,85,132,0.25),rgba(44,85,132,0.25),transparent)",
         pointerEvents:"none",
       }}/>
-
-      {/* Right-side decorative element */}
-      <div ref={decorRef} aria-hidden="true" style={{
-        position:"absolute",
-        right:isMobile?"20px":isTablet?"40px":"7%",
-        top:"50%",transform:"translateY(-50%)",
-        zIndex:1,
-        display:"flex",flexDirection:"column",
-        alignItems:"center",gap:"6px",
-        opacity:0,
-      }}>
-        {/* Vertical line with dots */}
-        {[0,1,2,3,4,5,6,7].map(i => (
-          <div key={i} style={{
-            width:"1px",height:"20px",
-            background:i%2===0?"rgba(44,85,132,0.4)":"rgba(255,255,255,0.05)",
-          }}/>
-        ))}
-        <div style={{
-          width:"6px",height:"6px",borderRadius:"50%",
-          background:"rgba(44,85,132,0.6)",
-          boxShadow:"0 0 10px rgba(44,85,132,0.4)",
-        }}/>
-        {[0,1,2].map(i => (
-          <div key={i} style={{width:"1px",height:"20px",background:"rgba(44,85,132,0.2)"}}/>
-        ))}
-        <span style={{
-          fontSize:"7px",letterSpacing:"0.4em",textTransform:"uppercase",
-          color:"rgba(255,255,255,0.1)",
-          writingMode:"vertical-rl",textOrientation:"mixed",
-          marginTop:"8px",
-        }}>04 — Contact</span>
-      </div>
 
       {/* Big headline */}
       <div style={{

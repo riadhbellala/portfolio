@@ -567,9 +567,6 @@ const Hero = forwardRef(function Hero({ isMobile }, ref) {
 
           <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"8px"}}>
             <div style={{width:"1px",height:isMobile?"36px":"52px",background:"linear-gradient(to bottom, rgba(44,85,132,0.8), transparent)"}}/>
-            <span style={{fontSize:"7px",letterSpacing:"0.4em",textTransform:"uppercase",color:"rgba(255,255,255,0.13)"}}>
-              {isMobile ? "Swipe" : "Scroll"}
-            </span>
           </div>
 
           {!isMobile && (
