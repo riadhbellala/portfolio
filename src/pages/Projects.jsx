@@ -2,6 +2,7 @@ import { useRef, useEffect, useState, useCallback } from "react";
 import gsap from "gsap";
 import { Draggable } from "gsap/Draggable";
 import { InertiaPlugin } from "gsap/InertiaPlugin";
+import lyceumImg from "../assets/project-lyceum.png";
 
 gsap.registerPlugin(Draggable, InertiaPlugin);
 
@@ -14,7 +15,7 @@ const PROJECTS = [
     description: "A community platform for students passionate about technology, creativity, leadership, and innovation. Built to connect the next generation of builders.",
     tech: ["React", "Vite", "Tailwind","GSAP","Supabase"],
     url: "https://lyceum-club.vercel.app",
-    image: "/assets/project-lyceum.png", // ← replace with: "/src/assets/project-lyceum.png"
+    image: lyceumImg, // ← replace with: "/src/assets/project-lyceum.png"
     accent: "#61DAFB",
     year: "2024",
   },
