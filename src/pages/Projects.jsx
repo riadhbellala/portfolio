@@ -20,32 +20,33 @@ const PROJECTS = [
     year: "2024",
   },
   {
-    id: 1,
-    index: "01",
+    id: 2,
+    index: "02",
     name: "Lyceum",
     tagline: "Innovation · Leadership · Community",
     description: "A community platform for students passionate about technology, creativity, leadership, and innovation. Built to connect the next generation of builders.",
     tech: ["React", "Vite", "Tailwind","GSAP","Supabase"],
     url: "https://lyceum-club.vercel.app",
-    image: "/src/assets/project-lyceum.png", // ← replace with: "/src/assets/project-lyceum.png"
-    accent: "#61DAFB",
+    image: lyceumImg, // ← replace with: "/src/assets/project-lyceum.png"
+    accent: "#88CE02",
     year: "2024",
   },
   {
-    id: 1,
-    index: "01",
+    id: 3,
+    index: "03",
     name: "Lyceum",
     tagline: "Innovation · Leadership · Community",
     description: "A community platform for students passionate about technology, creativity, leadership, and innovation. Built to connect the next generation of builders.",
     tech: ["React", "Vite", "Tailwind","GSAP","Supabase"],
     url: "https://lyceum-club.vercel.app",
-    image: "/src/assets/project-lyceum.png", // ← replace with: "/src/assets/project-lyceum.png"
+    image: lyceumImg, // ← replace with: "/src/assets/project-lyceum.png"
     accent: "#61DAFB",
-    year: "2026",
+    year: "2024",
   },
+
   {
-    id: 2,
-    index: "02",
+    id: 4,
+    index: "04",
     name: "Project Two",
     tagline: "Your second project tagline here",
     description: "Replace this with your real project description. What problem does it solve? What makes it interesting and worth showing?",
