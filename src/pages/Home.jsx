@@ -3,6 +3,7 @@ import gsap from "gsap";
 import Hero      from "../components/sections/Hero";
 import About     from "../components/sections/About";
 import TechStack from "../components/sections/TechStack";
+import Process   from "../components/sections/Process";
 import Contact   from "../components/sections/Contact";
 import NeuralBrain from "../components/sections/NeuralBrain";
 
@@ -32,7 +33,8 @@ function GrainOverlay() {
   );
 }
 
-const SECTION_LABELS = ["Hero","About","Stack","Contact"];
+/* ── 5 sections now ─────────────────────────────────────────────────────────── */
+const SECTION_LABELS = ["Hero","About","Stack","Process","Contact"];
 
 function NavDots({ current, onGo, isMobile }) {
   if (isMobile) return null;
@@ -95,7 +97,7 @@ function CustomCursor({ isMobile }) {
   );
 }
 
-// ── Section transitions (unchanged from original) ─────────────────────────
+/* ── Section transitions (unchanged) ────────────────────────────────────────── */
 const TRANSITIONS = [
   {
     exit:  (el, dir, tl) => tl.to(el, { scale:1.08, autoAlpha:0, filter:"blur(12px)", duration:0.7, ease:"power3.in" }),
@@ -118,6 +120,15 @@ const TRANSITIONS = [
       tl.to(el, { autoAlpha:1, scale:1, rotation:0, duration:0.85, ease:"power3.out" }, "-=0.25");
     },
   },
+  // Process — clip-path wipe from bottom
+  {
+    exit:  (el, dir, tl) => tl.to(el, { clipPath:"inset(0% 0% 100% 0%)", autoAlpha:0, duration:0.65, ease:"power3.in" }),
+    enter: (el, dir, tl) => {
+      gsap.set(el, { autoAlpha:1, clipPath: dir==="down"?"inset(100% 0% 0% 0%)":"inset(0% 0% 100% 0%)" });
+      tl.to(el, { clipPath:"inset(0% 0% 0% 0%)", duration:0.85, ease:"power3.out" }, "-=0.25");
+    },
+  },
+  // Contact — original clip-path wipe
   {
     exit:  (el, dir, tl) => tl.to(el, { clipPath:"inset(0% 0% 100% 0%)", autoAlpha:0, duration:0.65, ease:"power3.in" }),
     enter: (el, dir, tl) => {
@@ -127,62 +138,43 @@ const TRANSITIONS = [
   },
 ];
 
-// ── Brain choreography per section ───────────────────────────────────────────
-// Each entry describes where/how the brain should animate TO when that section
-// becomes active. Values are relative to the viewport.
-// isMobile flag is passed at call-time so we can adjust per breakpoint.
-//
-// Structure: { x, y, scale, opacity, rotation, duration, ease }
-// x/y are expressed as functions of (vw, vh) so they're always responsive.
+/* ── Brain choreography — now 5 sections ─────────────────────────────────────── */
 function getBrainTarget(sectionIndex, isMobile, isTablet) {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
 
   if (isMobile) {
-    // On mobile the brain is a background element — stays centered, just
-    // shifts scale + opacity to feel present but not obstructive.
-    const mobileTargets = [
-      // 0 Hero — centered, full presence
-      { x: 0, y: 0,        scale: 1,    opacity: 1,    rotation: 0   },
-      // 1 About — drift left, shrink, stay visible as ambient
-      { x: -vw * 0.05, y: vh * 0.08, scale: 0.55, opacity: 0.18, rotation: -8  },
-      // 2 TechStack — drift right, tiny ghost
-      { x: vw * 0.05,  y: -vh * 0.05, scale: 0.45, opacity: 0.12, rotation: 12  },
-      // 3 Contact — bottom-center, very faint
-      { x: 0,          y: vh * 0.12, scale: 0.5,  opacity: 0.10, rotation: -5  },
+    const targets = [
+      { x: 0,           y: 0,          scale: 1,    opacity: 1,    rotation: 0   },
+      { x: -vw * 0.05,  y: vh * 0.08,  scale: 0.55, opacity: 0.18, rotation: -8  },
+      { x: vw * 0.05,   y: -vh * 0.05, scale: 0.45, opacity: 0.12, rotation: 12  },
+      { x: 0,           y: -vh * 0.08, scale: 0.42, opacity: 0.10, rotation: 5   },
+      { x: 0,           y: vh * 0.12,  scale: 0.5,  opacity: 0.10, rotation: -5  },
     ];
-    return mobileTargets[sectionIndex] || mobileTargets[0];
+    return targets[sectionIndex] ?? targets[0];
   }
 
   if (isTablet) {
-    const tabletTargets = [
-      { x: vw * 0.27, y: 0,           scale: 1,    opacity: 1,    rotation: 0   },
-      { x: vw * 0.30, y: -vh * 0.05,  scale: 0.65, opacity: 0.22, rotation: -6  },
-      { x: -vw * 0.28, y: vh * 0.05,  scale: 0.55, opacity: 0.18, rotation: 10  },
-      { x: vw * 0.25, y: vh * 0.10,   scale: 0.5,  opacity: 0.14, rotation: -4  },
+    const targets = [
+      { x: vw * 0.27,   y: 0,           scale: 1,    opacity: 1,    rotation: 0   },
+      { x: vw * 0.30,   y: -vh * 0.05,  scale: 0.65, opacity: 0.22, rotation: -6  },
+      { x: -vw * 0.28,  y: vh * 0.05,   scale: 0.55, opacity: 0.18, rotation: 10  },
+      { x: vw * 0.28,   y: -vh * 0.06,  scale: 0.50, opacity: 0.15, rotation: -4  },
+      { x: vw * 0.25,   y: vh * 0.10,   scale: 0.5,  opacity: 0.14, rotation: -4  },
     ];
-    return tabletTargets[sectionIndex] || tabletTargets[0];
+    return targets[sectionIndex] ?? targets[0];
   }
 
   // Desktop
-  const desktopTargets = [
-    // 0 Hero — original position: right half, centered
+  const targets = [
     { x: vw * 0.27,   y: 0,           scale: 1,    opacity: 1,    rotation: 0   },
-
-    // 1 About — drifts to far right, shrinks to a ghost — text is left-dominant
-    //   Feels like the brain floats off-stage right while the words take over
     { x: vw * 0.38,   y: -vh * 0.06,  scale: 0.55, opacity: 0.20, rotation: -12 },
-
-    // 2 TechStack — swings to the left background, slightly below center
-    //   The grid of cards is center-right so the brain counterbalances
     { x: -vw * 0.30,  y: vh * 0.08,   scale: 0.60, opacity: 0.18, rotation: 15  },
-
-    // 3 Contact — rises top-right like a departing thought
-    //   Very faint, the human connection section needs less noise
+    // Process — brain drifts top-left, small ghost, content is center
+    { x: -vw * 0.32,  y: -vh * 0.10,  scale: 0.48, opacity: 0.14, rotation: -10 },
     { x: vw * 0.33,   y: -vh * 0.18,  scale: 0.45, opacity: 0.13, rotation: -8  },
   ];
-
-  return desktopTargets[sectionIndex] || desktopTargets[0];
+  return targets[sectionIndex] ?? targets[0];
 }
 
 export default function Home() {
@@ -191,30 +183,25 @@ export default function Home() {
   const isTablet = bp === "tablet";
 
   const [current, setCurrent] = useState(0);
-  const isAnimating  = useRef(false);
-  const currentRef   = useRef(0);
-
-  // ── Brain ref — Home owns it, passes it down to NeuralBrain ──────────────
-  const brainRef = useRef(null);
+  const isAnimating = useRef(false);
+  const currentRef  = useRef(0);
+  const brainRef    = useRef(null);
 
   const heroRef    = useRef(null);
   const aboutRef   = useRef(null);
   const stackRef   = useRef(null);
+  const processRef = useRef(null);
   const contactRef = useRef(null);
 
   const sectionRefs = useMemo(
-    () => [heroRef, aboutRef, stackRef, contactRef],
+    () => [heroRef, aboutRef, stackRef, processRef, contactRef],
     []
   );
 
-  // ── Animate brain to match the incoming section ───────────────────────────
   const animateBrain = useCallback((sectionIndex) => {
     const el = brainRef.current;
     if (!el) return;
-
-    const target = getBrainTarget(sectionIndex, isMobile, isTablet);
-
-    // Mid-flight: scale down + blur slightly (feels like it's moving through space)
+    const target     = getBrainTarget(sectionIndex, isMobile, isTablet);
     const midScale   = target.scale * 0.82;
     const travelTime = 0.38;
     const arriveTime = 0.72;
@@ -226,12 +213,11 @@ export default function Home() {
       ease: "power2.in",
       overwrite: "auto",
       onComplete: () => {
-        // Arrive: snap to final position, clear blur
         gsap.to(el, {
-          x:       target.x,
-          y:       target.y,
-          scale:   target.scale,
-          opacity: target.opacity,
+          x:        target.x,
+          y:        target.y,
+          scale:    target.scale,
+          opacity:  target.opacity,
           rotation: target.rotation,
           filter: isMobile
             ? "blur(0px) drop-shadow(0 0 30px rgba(44,100,200,0.4))"
@@ -250,18 +236,17 @@ export default function Home() {
     if (nextIndex === currentRef.current) return;
 
     isAnimating.current = true;
-    const curIdx  = currentRef.current;
-    const cur     = sectionRefs[curIdx].current;
-    const next    = sectionRefs[nextIndex].current;
+    const curIdx = currentRef.current;
+    const cur    = sectionRefs[curIdx].current;
+    const next   = sectionRefs[nextIndex].current;
     if (!cur || !next) { isAnimating.current = false; return; }
 
-    const exitTrans  = TRANSITIONS[curIdx]   || TRANSITIONS[0];
+    const exitTrans  = TRANSITIONS[curIdx]    || TRANSITIONS[0];
     const enterTrans = TRANSITIONS[nextIndex] || TRANSITIONS[0];
 
     gsap.set(next, { zIndex:3, clipPath:"inset(0% 0% 0% 0%)" });
     gsap.set(cur,  { zIndex:2 });
 
-    // ── Trigger brain choreography in parallel with section transition ──────
     animateBrain(nextIndex, dir);
 
     const tl = gsap.timeline({
@@ -280,22 +265,13 @@ export default function Home() {
 
     exitTrans.exit(cur, dir, tl);
     enterTrans.enter(next, dir, tl);
-
   }, [sectionRefs, animateBrain]);
 
-  // ── Initial brain position (Hero default) ────────────────────────────────
   useEffect(() => {
     const el = brainRef.current;
     if (!el) return;
     const target = getBrainTarget(0, isMobile, isTablet);
-    // NeuralBrain's own useEffect sets x/y on mount — we just ensure opacity
-    // and other props are correct for Hero from the start.
-    gsap.set(el, {
-      rotation: target.rotation,
-      // x/y are set by NeuralBrain's internal mount logic (posX.current etc.)
-      // so we don't override them here — just scale + opacity
-      scale:   target.scale,
-    });
+    gsap.set(el, { rotation: target.rotation, scale: target.scale });
   }, [isMobile, isTablet]);
 
   useEffect(() => {
@@ -362,16 +338,7 @@ export default function Home() {
         isMobile={isMobile}
       />
 
-      {/*
-        ── Persistent NeuralBrain ──────────────────────────────────────────
-        Rendered ONCE at the top level, always mounted, zIndex 9500.
-        Home.jsx animates it between sections via brainRef.
-        Hero no longer renders its own NeuralBrain.
-      */}
-      <NeuralBrain
-        isMobile={isMobile}
-        containerRef={brainRef}
-      />
+      <NeuralBrain isMobile={isMobile} containerRef={brainRef} />
 
       <main style={{
         width:"100vw", height:"100vh",
@@ -379,14 +346,10 @@ export default function Home() {
         background:"#080808",
         cursor: isMobile ? "auto" : "none",
       }}>
-        {/*
-          Pass isMobile as before. Hero no longer needs to render NeuralBrain
-          internally — remove the <NeuralBrain> line from Hero.jsx.
-          Everything else in each section is untouched.
-        */}
         <Hero      ref={heroRef}    isMobile={isMobile} />
         <About     ref={aboutRef}   isMobile={isMobile} />
         <TechStack ref={stackRef}   isMobile={isMobile} />
+        <Process   ref={processRef} isMobile={isMobile} />
         <Contact   ref={contactRef} isMobile={isMobile} />
       </main>
     </>
