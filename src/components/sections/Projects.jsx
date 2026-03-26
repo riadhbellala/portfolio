@@ -1,9 +1,12 @@
-import { useRef, useEffect, useState, useCallback, forwardRef } from "react";
+import {
+  useRef, useEffect, useState, useCallback, forwardRef,
+} from "react";
 import gsap from "gsap";
 import lyceumImg from "/src/assets/project-lyceum.png";
 
-
-/* ─── Only real, shipped projects ─────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────
+   PROJECTS — add as many as you want, they all just work
+───────────────────────────────────────────────────────────── */
 const PROJECTS = [
   {
     id: 1,
@@ -12,92 +15,102 @@ const PROJECTS = [
     category: "Community Platform",
     tagline: "Connecting the next generation of builders",
     description:
-      "A community platform for students passionate about technology, creativity, leadership, and innovation. Built to connect the next generation of builders.",
+      "A community platform for students passionate about technology, creativity, leadership, and innovation.",
     tech: ["React", "Vite", "Tailwind", "GSAP", "Supabase"],
     url: "https://lyceum-club.vercel.app",
-    image : lyceumImg,
+    image: lyceumImg,
     accent: "#61DAFB",
     year: "2024",
     role: "Full-Stack Dev",
   },
-  // Add more real projects here as you build them
-  // {
-  //   id: 2,
-  //   index: "02",
-  //   name: "...",
-  //   ...
-  // }
+  {
+    id: 1,
+    index: "01",
+    name: "Lyceum",
+    category: "Community Platform",
+    tagline: "Connecting the next generation of builders",
+    description:
+      "A community platform for students passionate about technology, creativity, leadership, and innovation.",
+    tech: ["React", "Vite", "Tailwind", "GSAP", "Supabase"],
+    url: "https://lyceum-club.vercel.app",
+    image: lyceumImg,
+    accent: "#61DAFB",
+    year: "2024",
+    role: "Full-Stack Dev",
+  },
+  // ← Paste more project objects here
 ];
 
-/* ─── Animated canvas (for projects without a screenshot) ──────────────────── */
+/* ─────────────────────────────────────────────────────────────
+   Animated canvas (shown when no image is set)
+───────────────────────────────────────────────────────────── */
 function CanvasVisual({ project }) {
   const ref = useRef(null);
   const raf = useRef(null);
-
   useEffect(() => {
     const canvas = ref.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
-    const hex = project.accent;
-    const r   = parseInt(hex.slice(1,3),16);
-    const g   = parseInt(hex.slice(3,5),16);
-    const b   = parseInt(hex.slice(5,7),16);
+    const [r, g, b] = [
+      parseInt(project.accent.slice(1, 3), 16),
+      parseInt(project.accent.slice(3, 5), 16),
+      parseInt(project.accent.slice(5, 7), 16),
+    ];
     let t = 0;
-
     const resize = () => {
-      canvas.width  = canvas.offsetWidth  || 300;
-      canvas.height = canvas.offsetHeight || 200;
+      canvas.width = canvas.offsetWidth || 400;
+      canvas.height = canvas.offsetHeight || 300;
     };
     resize();
     window.addEventListener("resize", resize);
-
     const draw = () => {
       const W = canvas.width, H = canvas.height;
-      ctx.clearRect(0,0,W,H);
-      ctx.fillStyle = "#06080f"; ctx.fillRect(0,0,W,H);
-
-      for (let x=0;x<W;x+=36) for (let y=0;y<H;y+=36) {
-        const dist  = Math.hypot(x-W/2, y-H/2);
-        const pulse = Math.sin(t*0.6-dist*0.012)*0.5+0.5;
-        ctx.beginPath(); ctx.arc(x,y,0.9,0,Math.PI*2);
-        ctx.fillStyle = `rgba(${r},${g},${b},${0.04+pulse*0.1})`; ctx.fill();
-      }
-
-      for (let wave=0;wave<6;wave++) {
+      ctx.clearRect(0, 0, W, H);
+      ctx.fillStyle = "#0a0d14"; ctx.fillRect(0, 0, W, H);
+      for (let x = 0; x < W; x += 38)
+        for (let y = 0; y < H; y += 38) {
+          const pulse = Math.sin(t * 0.5 - Math.hypot(x - W / 2, y - H / 2) * 0.01) * 0.5 + 0.5;
+          ctx.beginPath(); ctx.arc(x, y, 0.9, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(${r},${g},${b},${0.03 + pulse * 0.09})`; ctx.fill();
+        }
+      for (let w = 0; w < 5; w++) {
         ctx.beginPath();
-        ctx.strokeStyle = `rgba(${r},${g},${b},${0.04+wave*0.025})`;
-        ctx.lineWidth = 1.2;
-        for (let x=0;x<=W;x+=3) {
-          const y = H/2 + Math.sin((x/W)*Math.PI*2.5+t*0.7+wave*1.1)*(30+wave*18)
-                        + Math.cos((x/W)*Math.PI*1.2+t*0.4+wave)*(15+wave*8);
-          x===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+        ctx.strokeStyle = `rgba(${r},${g},${b},${0.04 + w * 0.022})`;
+        ctx.lineWidth = 1.1;
+        for (let x = 0; x <= W; x += 3) {
+          const y = H / 2
+            + Math.sin((x / W) * Math.PI * 2.4 + t * 0.65 + w * 1.1) * (28 + w * 16)
+            + Math.cos((x / W) * Math.PI * 1.1 + t * 0.35 + w) * (12 + w * 7);
+          x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
         }
         ctx.stroke();
       }
-
-      const pulse2 = Math.sin(t*1.2)*0.5+0.5;
-      const orbR   = 80+pulse2*30;
-      const grd    = ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,orbR*2);
-      grd.addColorStop(0, `rgba(${r},${g},${b},${0.35+pulse2*0.15})`);
-      grd.addColorStop(0.4, `rgba(${r},${g},${b},0.08)`);
+      const p2 = Math.sin(t * 1.1) * 0.5 + 0.5, oR = 70 + p2 * 28;
+      const grd = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, oR * 2);
+      grd.addColorStop(0, `rgba(${r},${g},${b},${0.3 + p2 * 0.13})`);
+      grd.addColorStop(0.4, `rgba(${r},${g},${b},0.06)`);
       grd.addColorStop(1, "transparent");
-      ctx.beginPath(); ctx.arc(W/2,H/2,orbR*2,0,Math.PI*2);
+      ctx.beginPath(); ctx.arc(W / 2, H / 2, oR * 2, 0, Math.PI * 2);
       ctx.fillStyle = grd; ctx.fill();
-
       t += 0.016;
       raf.current = requestAnimationFrame(draw);
     };
     draw();
-
-    return () => { cancelAnimationFrame(raf.current); window.removeEventListener("resize", resize); };
+    return () => {
+      cancelAnimationFrame(raf.current);
+      window.removeEventListener("resize", resize);
+    };
   }, [project]);
-
-  return <canvas ref={ref} style={{ position:"absolute",inset:0,width:"100%",height:"100%" }}/>;
+  return (
+    <canvas ref={ref} style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} />
+  );
 }
 
-/* ─── Breakpoint ───────────────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────
+   Breakpoint hook
+───────────────────────────────────────────────────────────── */
 function useBreakpoint() {
-  const get = useCallback(() => window.innerWidth < 768 ? "mobile" : "desktop", []);
+  const get = useCallback(() => (window.innerWidth < 768 ? "mobile" : "desktop"), []);
   const [bp, setBp] = useState(get);
   useEffect(() => {
     const h = () => setBp(get());
@@ -107,402 +120,480 @@ function useBreakpoint() {
   return bp;
 }
 
-/* ─── Coming Soon card ─────────────────────────────────────────────────────── */
-function ComingSoonCard({ accent="#2C5584" }) {
-  return (
-    <div style={{
-      padding:"24px 0 8px",
-      display:"flex", alignItems:"center", gap:"12px",
-      opacity:0.4,
-    }}>
-      <div style={{ width:"20px", height:"1px", background:accent }}/>
-      <span style={{
-        fontFamily:"'Courier New',monospace", fontSize:"8px",
-        letterSpacing:"0.4em", textTransform:"uppercase",
-        color:"rgba(255,255,255,0.3)",
-      }}>More projects shipping soon</span>
-      <div style={{ flex:1, height:"1px", background:"linear-gradient(90deg,rgba(255,255,255,0.08),transparent)" }}/>
-    </div>
-  );
-}
-
-/* ─── Desktop project row ──────────────────────────────────────────────────── */
-const ProjectRow = forwardRef(function ProjectRow(
-  { project, isActive, isHovered, isDimmed, onClick, onMouseEnter, onMouseLeave }, ref
-) {
-  const [localHover, setLocalHover] = useState(false);
-  const highlight = isActive || isHovered || localHover;
-
+/* ─────────────────────────────────────────────────────────────
+   Single project card
+───────────────────────────────────────────────────────────── */
+function ProjectCard({ project, isActive, cardRef, onClick }) {
+  const p = project;
   return (
     <div
-      ref={ref}
+      ref={cardRef}
       onClick={onClick}
-      onMouseEnter={() => { setLocalHover(true); onMouseEnter(); }}
-      onMouseLeave={() => { setLocalHover(false); onMouseLeave(); }}
       style={{
-        display:"flex", alignItems:"center",
-        padding:"18px 0",
-        borderBottom:"1px solid rgba(255,255,255,0.05)",
-        cursor:"pointer",
-        opacity: isDimmed ? 0.2 : 1,
-        transition:"opacity 0.25s ease",
-        position:"relative", userSelect:"none",
+        position: "absolute",
+        width: "100%",
+        height: "100%",
+        borderRadius: 24,
+        overflow: "hidden",
+        cursor: isActive ? "default" : "pointer",
+        userSelect: "none",
+        willChange: "transform",
+        background: "#0a0d14",
+        boxShadow: isActive
+          ? `0 40px 90px rgba(0,0,0,0.7), 0 0 0 1px ${p.accent}22, 0 0 60px ${p.accent}11`
+          : "0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05)",
+        transition: "box-shadow 0.4s ease",
+        transformStyle: "preserve-3d",
       }}
     >
+      {/* image or canvas */}
+      {p.image ? (
+        <img
+          src={p.image}
+          alt={p.name}
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+        />
+      ) : (
+        <CanvasVisual project={p} />
+      )}
+
+      {/* gradient overlays */}
       <div style={{
-        position:"absolute", left:-20, top:"50%", transform:"translateY(-50%)",
-        width:4,
-        height: isActive ? "60%" : "0%",
-        borderRadius:2, background:project.accent,
-        boxShadow:`0 0 10px ${project.accent}`,
-        transition:"height 0.35s cubic-bezier(0.4,0,0.2,1)",
-      }}/>
-
-      <span style={{
-        fontFamily:"'Courier New',monospace", fontSize:9, letterSpacing:"0.35em",
-        color: highlight ? project.accent : "rgba(255,255,255,0.18)",
-        width:36, flexShrink:0, transition:"color 0.2s",
-      }}>{project.index}</span>
-
-      <span style={{
-        flex:1,
-        fontSize: highlight ? "1.6rem" : "1.35rem",
-        fontWeight:800, letterSpacing: highlight ? "-0.04em" : "-0.02em",
-        color: highlight ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.35)",
-        lineHeight:1,
-        transition:"font-size 0.3s cubic-bezier(0.4,0,0.2,1), color 0.25s, letter-spacing 0.3s",
-      }}>{project.name}</span>
-
-      <span style={{
-        fontFamily:"'Courier New',monospace", fontSize:8, letterSpacing:"0.25em",
-        color:"rgba(255,255,255,0.2)", textTransform:"uppercase",
-        opacity: highlight ? 1 : 0,
-        transform: highlight ? "translateX(0)" : "translateX(8px)",
-        transition:"opacity 0.25s, transform 0.25s",
-        flexShrink:0, paddingRight:4,
-      }}>{project.category}</span>
-
-      <span style={{
-        fontSize:14, color:project.accent,
-        opacity: highlight ? 1 : 0,
-        transform: highlight ? "translateX(0)" : "translateX(-6px)",
-        transition:"opacity 0.2s, transform 0.2s",
-        marginLeft:10, flexShrink:0,
-      }}>→</span>
-    </div>
-  );
-});
-
-/* ─── Mobile row ───────────────────────────────────────────────────────────── */
-function MobileRow({ project, isActive, onClick }) {
-  return (
-    <div onClick={onClick} style={{
-      padding:"15px 0", borderBottom:"1px solid rgba(255,255,255,0.06)",
-      cursor:"pointer", display:"flex", alignItems:"center", gap:14,
-    }}>
+        position: "absolute", inset: 0,
+        background: "linear-gradient(to top, rgba(6,8,15,0.97) 0%, rgba(6,8,15,0.5) 45%, rgba(6,8,15,0.05) 100%)",
+        pointerEvents: "none",
+      }} />
       <div style={{
-        width:3, height: isActive ? 44 : 22, borderRadius:2,
-        background: isActive ? project.accent : "rgba(255,255,255,0.1)",
-        flexShrink:0,
-        transition:"height 0.35s cubic-bezier(0.4,0,0.2,1), background 0.3s",
-        boxShadow: isActive ? `0 0 10px ${project.accent}` : "none",
-      }}/>
-      <div style={{ flex:1, minWidth:0 }}>
-        <div style={{ display:"flex", alignItems:"baseline", gap:8, marginBottom: isActive?5:0 }}>
+        position: "absolute", inset: 0,
+        background: `radial-gradient(ellipse at 60% 20%, ${p.accent}14 0%, transparent 60%)`,
+        pointerEvents: "none",
+        transition: "background 0.5s",
+      }} />
+
+      {/* top badges */}
+      <div style={{
+        position: "absolute", top: 18, left: 18, right: 18,
+        display: "flex", justifyContent: "space-between", alignItems: "center", zIndex: 3,
+      }}>
+        <div style={{
+          display: "flex", alignItems: "center", gap: 6,
+          padding: "5px 12px", borderRadius: 100,
+          background: "rgba(6,8,15,0.7)", backdropFilter: "blur(12px)",
+          border: "1px solid rgba(255,255,255,0.08)",
+        }}>
+          <div style={{
+            width: 5, height: 5, borderRadius: "50%",
+            background: p.accent, boxShadow: `0 0 7px ${p.accent}`,
+          }} />
           <span style={{
-            fontFamily:"'Courier New',monospace", fontSize:8, letterSpacing:"0.3em",
-            color: isActive ? project.accent : "rgba(255,255,255,0.2)", flexShrink:0,
-            transition:"color 0.25s",
-          }}>{project.index}</span>
-          <span style={{
-            fontSize: isActive ? 19 : 15, fontWeight:800,
-            letterSpacing: isActive ? "-0.04em" : "-0.02em",
-            color: isActive ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.38)",
-            lineHeight:1, transition:"font-size 0.3s, color 0.25s",
-            overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap",
-          }}>{project.name}</span>
+            fontFamily: "'Courier New',monospace", fontSize: 8,
+            letterSpacing: "0.3em", textTransform: "uppercase",
+            color: "rgba(255,255,255,0.5)",
+          }}>{p.index}</span>
         </div>
         <div style={{
-          overflow:"hidden",
-          maxHeight: isActive ? "60px" : "0px",
+          padding: "5px 12px", borderRadius: 100,
+          background: "rgba(6,8,15,0.7)", backdropFilter: "blur(12px)",
+          border: `1px solid ${p.accent}33`,
+          fontFamily: "'Courier New',monospace", fontSize: 8,
+          letterSpacing: "0.25em", color: p.accent,
+        }}>{p.year}</div>
+      </div>
+
+      {/* bottom meta */}
+      <div style={{
+        position: "absolute", bottom: 0, left: 0, right: 0,
+        padding: "0 22px 22px", zIndex: 3,
+      }}>
+        {/* category */}
+        <div style={{ marginBottom: 8 }}>
+          <span style={{
+            display: "inline-flex", alignItems: "center", gap: 6,
+            padding: "4px 11px", borderRadius: 100,
+            border: `1px solid ${p.accent}44`, background: `${p.accent}10`,
+            fontFamily: "'Courier New',monospace", fontSize: 7.5,
+            letterSpacing: "0.3em", textTransform: "uppercase", color: p.accent,
+          }}>{p.category}</span>
+        </div>
+
+        {/* name */}
+        <h2 style={{
+          margin: "0 0 6px",
+          fontFamily: "'Helvetica Neue',Helvetica,Arial,sans-serif",
+          fontSize: "clamp(1.7rem,2.8vw,2.6rem)",
+          fontWeight: 900, letterSpacing: "-0.045em",
+          lineHeight: 1, color: "rgba(255,255,255,0.95)",
+        }}>
+          {p.name}<span style={{ color: p.accent }}>.</span>
+        </h2>
+
+        {/* description — expands on active */}
+        <div style={{
+          overflow: "hidden",
+          maxHeight: isActive ? 60 : 0,
           opacity: isActive ? 1 : 0,
-          transition:"max-height 0.35s, opacity 0.25s",
+          transition: "max-height 0.4s ease, opacity 0.3s ease",
         }}>
           <p style={{
-            margin:0, fontSize:11, lineHeight:1.55,
-            color:"rgba(255,255,255,0.28)", fontFamily:"Georgia,serif",
-          }}>{project.tagline}</p>
+            margin: "0 0 12px", fontSize: 12, lineHeight: 1.65,
+            color: "rgba(255,255,255,0.4)", fontFamily: "Georgia,serif",
+          }}>{p.description}</p>
         </div>
-      </div>
-      <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:4, flexShrink:0 }}>
-        <span style={{
-          fontFamily:"'Courier New',monospace", fontSize:8, letterSpacing:"0.25em",
-          color: isActive ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.12)",
-          transition:"color 0.25s",
-        }}>{project.year}</span>
-        <span style={{
-          fontSize:13, color:project.accent,
+
+        {/* tech badges — expands on active */}
+        <div style={{
+          display: "flex", flexWrap: "wrap", gap: 5,
+          overflow: "hidden",
+          maxHeight: isActive ? 60 : 0,
           opacity: isActive ? 1 : 0,
-          transform: isActive ? "translateX(0)" : "translateX(-4px)",
-          transition:"opacity 0.25s, transform 0.25s",
-        }}>→</span>
+          marginBottom: isActive ? 16 : 0,
+          transition: "max-height 0.4s ease 0.05s, opacity 0.3s ease 0.05s, margin 0.3s",
+        }}>
+          {p.tech.map(t => (
+            <span key={t} style={{
+              padding: "3px 10px", borderRadius: 100,
+              border: `1px solid ${p.accent}2a`, background: `${p.accent}09`,
+              fontFamily: "'Courier New',monospace", fontSize: 7.5,
+              letterSpacing: "0.18em", textTransform: "uppercase", color: `${p.accent}bb`,
+            }}>{t}</span>
+          ))}
+        </div>
+
+        {/* CTA — expands on active */}
+        <div style={{
+          display: "flex", alignItems: "center", gap: 16,
+          overflow: "hidden",
+          maxHeight: isActive ? 50 : 0,
+          opacity: isActive ? 1 : 0,
+          transition: "max-height 0.4s ease 0.1s, opacity 0.3s ease 0.1s",
+        }}>
+          <a
+            href={p.url}
+            target="_blank"
+            rel="noreferrer"
+            onClick={e => e.stopPropagation()}
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 8,
+              padding: "10px 20px", borderRadius: 100,
+              background: p.accent, color: "#06080f",
+              fontFamily: "'Courier New',monospace", fontSize: 8.5, fontWeight: 700,
+              letterSpacing: "0.28em", textTransform: "uppercase",
+              textDecoration: "none", flexShrink: 0,
+              boxShadow: `0 0 22px ${p.accent}44`,
+              transition: "transform 0.2s, box-shadow 0.2s",
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.transform = "translateY(-2px)";
+              e.currentTarget.style.boxShadow = `0 6px 28px ${p.accent}66`;
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.transform = "";
+              e.currentTarget.style.boxShadow = `0 0 22px ${p.accent}44`;
+            }}
+          >
+            View Project ↗
+          </a>
+          <span style={{
+            fontFamily: "'Courier New',monospace", fontSize: 7.5,
+            letterSpacing: "0.22em", color: "rgba(255,255,255,0.18)",
+            textTransform: "uppercase",
+          }}>{p.role}</span>
+        </div>
       </div>
     </div>
   );
 }
 
-/* ─── Main component (forwardRef so Home.jsx can hand it a section ref) ──────── */
+/* ─────────────────────────────────────────────────────────────
+   Dot navigation
+───────────────────────────────────────────────────────────── */
+function DotNav({ total, active, accent, onSelect }) {
+  if (total <= 1) return null;
+  // for many projects, show max 7 dots + ellipsis behaviour
+  const MAX = 7;
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+      {Array.from({ length: Math.min(total, MAX) }).map((_, i) => {
+        const idx = total <= MAX ? i : Math.round((i / (MAX - 1)) * (total - 1));
+        const isActive = total <= MAX ? active === i : Math.abs(active - idx) < total / MAX;
+        return (
+          <button
+            key={i}
+            onClick={() => onSelect(total <= MAX ? i : idx)}
+            style={{
+              width: isActive ? 22 : 6, height: 6, borderRadius: 3,
+              border: "none", padding: 0, cursor: "pointer",
+              background: isActive ? accent : "rgba(255,255,255,0.18)",
+              boxShadow: isActive ? `0 0 10px ${accent}88` : "none",
+              transition: "all 0.3s cubic-bezier(0.4,0,0.2,1)",
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Main component
+───────────────────────────────────────────────────────────── */
 const Projects = forwardRef(function Projects({ isMobile: isMobileProp }, ref) {
-  const bp       = useBreakpoint();
-  const isMobile = isMobileProp ?? (bp === "mobile");
+  const bp = useBreakpoint();
+  const isMobile = isMobileProp ?? bp === "mobile";
 
-  const [active,  setActive]  = useState(0);
-  const [hovered, setHovered] = useState(null);
+  const [active, setActive] = useState(0);
   const [entered, setEntered] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [hintVisible, setHintVisible] = useState(true);
 
-  const displayed = hovered !== null ? hovered : active;
-  const proj      = PROJECTS[displayed] ?? PROJECTS[0];
+  const wrapRef = useRef(null);
+  const deckRef = useRef(null);
+  const cardRefs = useRef([]);
+  const headerRef = useRef(null);
+  const footerRef = useRef(null);
+  const dragState = useRef({ startX: 0, dx: 0, active: false });
 
-  const wrapRef     = useRef(null);
-  const imgRef      = useRef(null);
-  const metaNameRef = useRef(null);
-  const metaCatRef  = useRef(null);
-  const metaDescRef = useRef(null);
-  const metaTechRef = useRef(null);
-  const metaYearRef = useRef(null);
-  const lineRefs    = useRef([]);
+  const n = PROJECTS.length;
+  const proj = PROJECTS[active];
 
-  /* entrance */
+  /* ── fan layout ── */
+  const layoutDeck = useCallback((activeIdx, animate = true) => {
+    PROJECTS.forEach((_, i) => {
+      const el = cardRefs.current[i];
+      if (!el) return;
+      const offset = i - activeIdx;
+      const abs = Math.abs(offset);
+      const sign = Math.sign(offset);
+
+      gsap.to(el, {
+        x: offset === 0 ? 0 : `${sign * Math.min(abs * 16, 48)}%`,
+        rotateY: offset === 0 ? 0 : sign * Math.min(abs * 5, 20),
+        scale: offset === 0 ? 1 : Math.max(0.9 - abs * 0.05, 0.72),
+        z: offset === 0 ? 0 : -abs * 45,
+        opacity: abs > 3 ? 0 : offset === 0 ? 1 : Math.max(0.82 - abs * 0.2, 0.18),
+        zIndex: n - abs,
+        duration: animate ? 0.55 : 0,
+        ease: "expo.out",
+        pointerEvents: offset === 0 ? "auto" : "none",
+      });
+    });
+  }, [n]);
+
+  /* ── entrance ── */
+  function playEntrance() {
+    const tl = gsap.timeline({ delay: 0.06 });
+    if (headerRef.current)
+      tl.fromTo(headerRef.current, { y: -20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, ease: "expo.out" });
+    if (deckRef.current)
+      tl.fromTo(deckRef.current, { y: 60, opacity: 0 }, { y: 0, opacity: 1, duration: 0.75, ease: "expo.out" }, "-=0.35");
+    if (footerRef.current)
+      tl.fromTo(footerRef.current, { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "expo.out" }, "-=0.3");
+    setTimeout(() => layoutDeck(0, true), 200);
+  }
+
   useEffect(() => {
     const el = ref?.current ?? wrapRef.current;
     if (!el) return;
-
-    // If used as a home section, wait for visibility mutation
     if (ref?.current) {
       const obs = new MutationObserver(() => {
-        const visible = el.style.visibility!=="hidden" && parseFloat(el.style.opacity||"0")>0.5;
-        if (visible && !entered) {
-          setEntered(true);
-          playEntrance();
-        }
+        const visible = el.style.visibility !== "hidden" && parseFloat(el.style.opacity || "0") > 0.5;
+        if (visible && !entered) { setTimeout(() => setEntered(true), 0); playEntrance(); }
       });
-      obs.observe(el, { attributes:true, attributeFilter:["style"] });
+      obs.observe(el, { attributes: true, attributeFilter: ["style"] });
       return () => obs.disconnect();
     }
-    // Standalone page — animate immediately
     playEntrance();
-    setEntered(true);
+    setTimeout(() => setEntered(true), 0);
   }, [ref]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  function playEntrance() {
-    const tl = gsap.timeline({ delay:0.1 });
-    tl.fromTo(wrapRef.current, { opacity:0 }, { opacity:1, duration:0.5, ease:"power2.out" });
-    const validLines = lineRefs.current.filter(Boolean);
-    if (validLines.length) {
-      tl.fromTo(validLines, { x:-40, opacity:0 }, { x:0, opacity:1, stagger:0.07, duration:0.6, ease:"expo.out" }, "-=0.2");
-    }
-    if (imgRef.current) tl.fromTo(imgRef.current, { opacity:0 }, { opacity:1, duration:0.6, ease:"power2.out" }, "-=0.3");
-  }
-
-  /* meta crossfade */
-  const prevDisplayed = useRef(displayed);
   useEffect(() => {
-    if (!entered || isMobile) return;
-    if (prevDisplayed.current === displayed) return;
-    prevDisplayed.current = displayed;
-    const els = [metaNameRef,metaCatRef,metaDescRef,metaTechRef,metaYearRef].map(r=>r.current).filter(Boolean);
-    gsap.fromTo(els, { y:14, opacity:0 }, { y:0, opacity:1, stagger:0.04, duration:0.4, ease:"power3.out" });
-    if (imgRef.current) gsap.fromTo(imgRef.current, { opacity:0, scale:1.04 }, { opacity:1, scale:1, duration:0.55, ease:"power2.out" });
-  }, [displayed, entered, isMobile]);
+    if (entered) layoutDeck(active, true);
+  }, [active, entered, layoutDeck]);
 
-  const handleClick = useCallback((i) => { setActive(i); setHovered(null); }, []);
+  /* ── drag ── */
+  const startDrag = (clientX) => {
+    dragState.current = { startX: clientX, dx: 0, active: true };
+    setIsDragging(true);
+  };
+  const moveDrag = (clientX) => {
+    if (!dragState.current.active) return;
+    dragState.current.dx = clientX - dragState.current.startX;
+    const el = cardRefs.current[active];
+    if (el) gsap.to(el, { x: `${dragState.current.dx * 0.07}%`, duration: 0.08 });
+  };
+  const endDrag = () => {
+    if (!dragState.current.active) return;
+    dragState.current.active = false;
+    setIsDragging(false);
+    setHintVisible(false);
+    const { dx } = dragState.current;
+    // snap back active card
+    const el = cardRefs.current[active];
+    if (el) gsap.to(el, { x: 0, duration: 0.35, ease: "expo.out" });
+    if (Math.abs(dx) > 50) {
+      if (dx < 0 && active < n - 1) setActive(a => a + 1);
+      else if (dx > 0 && active > 0) setActive(a => a - 1);
+    }
+  };
 
-  /* ════ MOBILE ════ */
-  if (isMobile) {
-    return (
-      <section ref={ref} style={{
-        position:"fixed", inset:0,
-        background:"#06080f",
-        display:"flex", flexDirection:"column",
-        overflow:"hidden",
-        fontFamily:"'Helvetica Neue',Helvetica,Arial,sans-serif",
-      }}>
-        <div ref={wrapRef} style={{ display:"contents" }}>
-          {/* Visual */}
-          <div style={{ height:"44%", flexShrink:0, position:"relative", overflow:"hidden", background:"#06080f" }}>
-            {PROJECTS.map((p,i) => (
-              p.image ? (
-                <img key={p.id} src={p.image} alt={p.name} style={{
-                  position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",
-                  opacity:active===i?1:0,transition:"opacity 0.5s cubic-bezier(0.4,0,0.2,1)",
-                }}/>
-              ) : (
-                <div key={p.id} style={{ position:"absolute",inset:0,opacity:active===i?1:0,transition:"opacity 0.5s" }}>
-                  <CanvasVisual project={p}/>
-                </div>
-              )
-            ))}
-            <div style={{ position:"absolute",inset:0,background:"linear-gradient(to bottom,rgba(6,8,15,0.1) 0%,rgba(6,8,15,0.7) 75%,#06080f 100%)",pointerEvents:"none",zIndex:2 }}/>
-            <div style={{ position:"absolute",inset:0,background:`radial-gradient(ellipse at 50% 60%,${proj.accent}1c 0%,transparent 65%)`,pointerEvents:"none",zIndex:1,transition:"background 0.6s ease" }}/>
-            <div style={{ position:"absolute",bottom:16,left:20,zIndex:3,pointerEvents:"none" }}>
-              <div style={{ fontFamily:"'Courier New',monospace",fontSize:7,letterSpacing:"0.4em",color:proj.accent,textTransform:"uppercase",marginBottom:4 }}>{proj.index} — {proj.category}</div>
-              <div style={{ fontSize:"1.55rem",fontWeight:900,letterSpacing:"-0.04em",lineHeight:1,color:"rgba(255,255,255,0.92)" }}>
-                {proj.name}<span style={{ color:proj.accent }}>.</span>
-              </div>
-            </div>
-          </div>
+  /* ── keyboard ── */
+  useEffect(() => {
+    const h = (e) => {
+      if (["ArrowRight", "ArrowDown"].includes(e.key)) setActive(a => Math.min(a + 1, n - 1));
+      if (["ArrowLeft", "ArrowUp"].includes(e.key)) setActive(a => Math.max(a - 1, 0));
+    };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [n]);
 
-          {/* List */}
-          <div style={{ flex:1, overflowY:"auto", WebkitOverflowScrolling:"touch", padding:"0 20px", paddingBottom:"calc(24px + env(safe-area-inset-bottom,0px))", boxSizing:"border-box" }}>
-            <div style={{ padding:"16px 0 10px", display:"flex", alignItems:"center", gap:10 }}>
-              <div style={{ width:20,height:1,background:"rgba(255,255,255,0.12)" }}/>
-              <span style={{ fontFamily:"'Courier New',monospace",fontSize:8,letterSpacing:"0.45em",textTransform:"uppercase",color:"rgba(255,255,255,0.18)" }}>Selected Work</span>
-              <div style={{ flex:1,height:1,background:"linear-gradient(90deg,rgba(255,255,255,0.06),transparent)" }}/>
-            </div>
-            {PROJECTS.map((p,i) => (
-              <MobileRow key={p.id} project={p} isActive={active===i} onClick={()=>handleClick(i)}/>
-            ))}
-            <ComingSoonCard accent={proj.accent}/>
-            <div style={{ padding:"20px 0 4px" }}>
-              <a href={proj.url} target="_blank" rel="noreferrer" style={{
-                display:"inline-flex",alignItems:"center",gap:10,
-                fontFamily:"'Courier New',monospace",fontSize:9,letterSpacing:"0.35em",textTransform:"uppercase",
-                color:proj.accent,textDecoration:"none",
-              }}>
-                <div style={{ width:16,height:1,background:proj.accent,flexShrink:0 }}/>
-                View {proj.name} ↗
-              </a>
-            </div>
-          </div>
-        </div>
-      </section>
-    );
-  }
+  const go = (dir) => setActive(a => dir === "prev" ? Math.max(a - 1, 0) : Math.min(a + 1, n - 1));
 
-  /* ════ DESKTOP ════ */
+  const CARD_W = isMobile ? "min(82vw, 340px)" : "min(40vw, 500px)";
+  const CARD_H = isMobile ? "min(68vh, 490px)" : "min(72vh, 600px)";
+
   return (
-    <section ref={ref} style={{
-      position:"fixed", inset:0,
-      background:"#06080f",
-      display:"flex", overflow:"hidden",
-      fontFamily:"'Helvetica Neue',Helvetica,Arial,sans-serif",
-    }}>
-      <div ref={wrapRef} style={{ display:"contents", opacity:0 }}>
-        {/* Left panel */}
-        <div style={{
-          width:"clamp(320px,38%,480px)", flexShrink:0,
-          display:"flex", flexDirection:"column", justifyContent:"center",
-          padding:"0 0 0 clamp(40px,6vw,80px)",
-          position:"relative", zIndex:3,
-        }}>
-          <div style={{ marginBottom:36, display:"flex", alignItems:"center", gap:12 }}>
-            <div style={{ width:24,height:1,background:"rgba(255,255,255,0.2)" }}/>
-            <span style={{ fontFamily:"'Courier New',monospace",fontSize:8,letterSpacing:"0.5em",textTransform:"uppercase",color:"rgba(255,255,255,0.2)" }}>Selected Work</span>
-          </div>
+    <section
+      ref={ref ?? wrapRef}
+      style={{
+        position: "fixed", inset: 0,
+        background: "#06080f",
+        display: "flex", flexDirection: "column",
+        alignItems: "center", justifyContent: "center",
+        overflow: "hidden",
+        fontFamily: "'Helvetica Neue',Helvetica,Arial,sans-serif",
+        perspective: "1400px",
+      }}
+    >
+      {/* grain texture */}
+      <div style={{
+        position: "absolute", inset: 0, pointerEvents: "none", zIndex: 20, opacity: 0.5,
+        backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E\")",
+      }} />
 
-          <div style={{ display:"flex", flexDirection:"column" }}>
-            {PROJECTS.map((p,i) => (
-              <ProjectRow
-                key={p.id}
-                ref={el=>(lineRefs.current[i]=el)}
-                project={p}
-                isActive={active===i}
-                isHovered={hovered===i}
-                isDimmed={hovered!==null&&hovered!==i}
-                onClick={()=>handleClick(i)}
-                onMouseEnter={()=>setHovered(i)}
-                onMouseLeave={()=>setHovered(null)}
-              />
-            ))}
-          </div>
+      {/* ambient glow */}
+      <div style={{
+        position: "absolute", top: "50%", left: "50%",
+        transform: "translate(-50%,-50%)",
+        width: "70vw", height: "70vh",
+        background: `radial-gradient(ellipse at center, ${proj.accent}0a 0%, transparent 70%)`,
+        pointerEvents: "none",
+        transition: "background 0.7s ease",
+        zIndex: 0,
+      }} />
 
-          <ComingSoonCard accent={proj.accent}/>
-
-          <div style={{ marginTop:40,fontFamily:"'Courier New',monospace",fontSize:8,letterSpacing:"0.4em",color:"rgba(255,255,255,0.1)",display:"flex",alignItems:"center",gap:10 }}>
-            <span style={{ color:proj.accent,transition:"color 0.3s" }}>{String(displayed+1).padStart(2,"0")}</span>
-            <span>/ {String(PROJECTS.length).padStart(2,"0")}</span>
-            <div style={{ flex:1,height:1,background:"linear-gradient(90deg,rgba(255,255,255,0.08),transparent)" }}/>
-          </div>
-        </div>
-
-        {/* Right panel */}
-        <div style={{ flex:1,position:"relative",overflow:"hidden",display:"flex",flexDirection:"column",justifyContent:"flex-end" }}>
-          <div style={{ position:"absolute",inset:0 }}>
-            {proj.image ? (
-              <img ref={imgRef} src={proj.image} alt={proj.name} style={{ width:"100%",height:"100%",objectFit:"cover",display:"block",opacity:0 }}/>
-            ) : (
-              <div ref={imgRef} style={{ position:"absolute",inset:0,opacity:0 }}>
-                <CanvasVisual project={proj}/>
-              </div>
-            )}
-            <div style={{ position:"absolute",inset:0,background:"linear-gradient(to right,#06080f 0%,transparent 30%)",pointerEvents:"none",zIndex:1 }}/>
-            <div style={{ position:"absolute",inset:0,background:"linear-gradient(to top,#06080f 0%,transparent 55%)",pointerEvents:"none",zIndex:1 }}/>
-            <div style={{ position:"absolute",inset:0,background:`radial-gradient(ellipse at 60% 40%,${proj.accent}14 0%,transparent 60%)`,pointerEvents:"none",zIndex:1,transition:"background 0.6s ease" }}/>
-          </div>
-
-          {/* Meta block */}
-          <div style={{
-            position:"relative",zIndex:2,
-            padding:"0 clamp(32px,5vw,64px) clamp(32px,5vh,56px) clamp(32px,4vw,56px)",
-            maxWidth:520,
-          }}>
-            <div ref={metaCatRef} style={{
-              display:"inline-flex",alignItems:"center",gap:8,marginBottom:14,
-              padding:"4px 12px",
-              border:`1px solid ${proj.accent}44`,borderRadius:100,
-              background:`${proj.accent}0d`,
-            }}>
-              <div style={{ width:5,height:5,borderRadius:"50%",background:proj.accent,boxShadow:`0 0 8px ${proj.accent}` }}/>
-              <span style={{ fontFamily:"'Courier New',monospace",fontSize:8,letterSpacing:"0.3em",color:proj.accent,textTransform:"uppercase" }}>{proj.category}</span>
-            </div>
-
-            <h2 ref={metaNameRef} style={{
-              margin:"0 0 8px",
-              fontSize:"clamp(2.2rem,4vw,3.8rem)",
-              fontWeight:900,letterSpacing:"-0.04em",lineHeight:1,
-              color:"rgba(255,255,255,0.95)",
-            }}>
-              {proj.name}<span style={{ color:proj.accent }}>.</span>
-            </h2>
-
-            <p ref={metaDescRef} style={{
-              margin:"0 0 20px",fontSize:13,lineHeight:1.75,
-              color:"rgba(255,255,255,0.38)",fontFamily:"Georgia,serif",
-              letterSpacing:"0.01em",maxWidth:400,
-            }}>{proj.description}</p>
-
-            <div ref={metaTechRef} style={{ display:"flex",flexWrap:"wrap",gap:6,marginBottom:20 }}>
-              {proj.tech.map(t=>(
-                <span key={t} style={{
-                  fontFamily:"'Courier New',monospace",fontSize:8,letterSpacing:"0.2em",
-                  padding:"4px 10px",
-                  border:"1px solid rgba(255,255,255,0.1)",
-                  color:"rgba(255,255,255,0.3)",textTransform:"uppercase",
-                }}>{t}</span>
-              ))}
-            </div>
-
-            <div ref={metaYearRef} style={{ display:"flex",alignItems:"center",gap:20 }}>
-              <a href={proj.url} target="_blank" rel="noreferrer"
-                style={{
-                  display:"inline-flex",alignItems:"center",gap:10,
-                  fontFamily:"'Courier New',monospace",fontSize:9,letterSpacing:"0.35em",textTransform:"uppercase",
-                  color:proj.accent,textDecoration:"none",transition:"gap 0.25s",
-                }}
-                onMouseEnter={e=>{e.currentTarget.style.gap="16px";}}
-                onMouseLeave={e=>{e.currentTarget.style.gap="10px";}}
-              >
-                <span style={{ display:"inline-block",width:20,height:1,background:proj.accent,flexShrink:0 }}/>
-                View project <span style={{ fontSize:11 }}>↗</span>
-              </a>
-              <div style={{ width:1,height:16,background:"rgba(255,255,255,0.1)" }}/>
-              <span style={{ fontFamily:"'Courier New',monospace",fontSize:8,letterSpacing:"0.3em",color:"rgba(255,255,255,0.2)" }}>
-                {proj.role} · {proj.year}
-              </span>
-            </div>
-          </div>
-        </div>
+      {/* header */}
+      <div ref={headerRef} style={{
+        position: "absolute",
+        top: isMobile ? 20 : 30,
+        left: 0, right: 0,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        gap: 12, zIndex: 10, opacity: 0,
+      }}>
+        <div style={{ width: 20, height: 1, background: "rgba(255,255,255,0.15)" }} />
+        <span style={{
+          fontFamily: "'Courier New',monospace", fontSize: 8,
+          letterSpacing: "0.55em", textTransform: "uppercase",
+          color: "rgba(255,255,255,0.18)",
+        }}>Selected Work</span>
+        <div style={{ width: 20, height: 1, background: "rgba(255,255,255,0.15)" }} />
       </div>
+
+      {/* deck */}
+      <div
+        ref={deckRef}
+        style={{
+          position: "relative", zIndex: 5,
+          width: CARD_W, height: CARD_H,
+          transformStyle: "preserve-3d",
+          cursor: isDragging ? "grabbing" : n > 1 ? "grab" : "default",
+          opacity: 0,
+        }}
+        onMouseDown={e => startDrag(e.clientX)}
+        onMouseMove={e => moveDrag(e.clientX)}
+        onMouseUp={endDrag}
+        onMouseLeave={endDrag}
+        onTouchStart={e => startDrag(e.touches[0].clientX)}
+        onTouchMove={e => { e.preventDefault(); moveDrag(e.touches[0].clientX); }}
+        onTouchEnd={endDrag}
+      >
+        {PROJECTS.map((p, i) => (
+          <ProjectCard
+            key={p.id}
+            project={p}
+            isActive={active === i}
+            cardRef={el => (cardRefs.current[i] = el)}
+            onClick={() => { if (i !== active) setActive(i); }}
+          />
+        ))}
+      </div>
+
+      {/* swipe hint — fades after first interaction */}
+      {n > 1 && hintVisible && (
+        <div style={{
+          position: "absolute",
+          bottom: isMobile ? "calc(80px + env(safe-area-inset-bottom,0px))" : 88,
+          left: "50%", transform: "translateX(-50%)",
+          display: "flex", alignItems: "center", gap: 10,
+          fontFamily: "'Courier New',monospace", fontSize: 8,
+          letterSpacing: "0.4em", textTransform: "uppercase",
+          color: "rgba(255,255,255,0.18)", whiteSpace: "nowrap",
+          zIndex: 10, pointerEvents: "none",
+          animation: "hint-pulse 2.5s ease-in-out infinite",
+        }}>
+          <span>←</span>
+          <span>drag to explore</span>
+          <span>→</span>
+        </div>
+      )}
+
+      {/* footer nav */}
+      <div ref={footerRef} style={{
+        position: "absolute",
+        bottom: isMobile ? "calc(20px + env(safe-area-inset-bottom,0px))" : 32,
+        display: "flex", alignItems: "center", gap: 16, zIndex: 10, opacity: 0,
+      }}>
+        {/* prev */}
+        <button
+          onClick={() => go("prev")}
+          disabled={active === 0}
+          style={{
+            width: 38, height: 38, borderRadius: "50%",
+            border: `1px solid ${active === 0 ? "rgba(255,255,255,0.06)" : proj.accent + "44"}`,
+            background: active === 0 ? "rgba(255,255,255,0.02)" : `${proj.accent}0e`,
+            color: active === 0 ? "rgba(255,255,255,0.2)" : proj.accent,
+            fontSize: 15, cursor: active === 0 ? "default" : "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            transition: "all 0.25s ease", outline: "none",
+            boxShadow: active === 0 ? "none" : `0 0 14px ${proj.accent}22`,
+          }}
+        >←</button>
+
+        <DotNav total={n} active={active} accent={proj.accent} onSelect={setActive} />
+
+        {/* next */}
+        <button
+          onClick={() => go("next")}
+          disabled={active === n - 1}
+          style={{
+            width: 38, height: 38, borderRadius: "50%",
+            border: `1px solid ${active === n - 1 ? "rgba(255,255,255,0.06)" : proj.accent + "44"}`,
+            background: active === n - 1 ? "rgba(255,255,255,0.02)" : `${proj.accent}0e`,
+            color: active === n - 1 ? "rgba(255,255,255,0.2)" : proj.accent,
+            fontSize: 15, cursor: active === n - 1 ? "default" : "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            transition: "all 0.25s ease", outline: "none",
+            boxShadow: active === n - 1 ? "none" : `0 0 14px ${proj.accent}22`,
+          }}
+        >→</button>
+      </div>
+
+      {/* pulse animation for hint */}
+      <style>{`
+        @keyframes hint-pulse {
+          0%, 100% { opacity: 0.18; }
+          50% { opacity: 0.4; }
+        }
+      `}</style>
     </section>
   );
 });
