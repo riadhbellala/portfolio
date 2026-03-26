@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import gsap from "gsap";
-import Hero      from "../components/sections/Hero";
-import About     from "../components/sections/About";
-import TechStack from "../components/sections/TechStack";
-import Process   from "../components/sections/Process";
-import Contact   from "../components/sections/Contact";
+import Hero       from "../components/sections/Hero";
+import Projects   from "../components/sections/Projects";
+import AboutStack from "../components/sections/AboutStack";
+import Contact    from "../components/sections/Contact";
 import NeuralBrain from "../components/sections/NeuralBrain";
 
 function useBreakpoint() {
@@ -33,8 +32,7 @@ function GrainOverlay() {
   );
 }
 
-/* ── 5 sections now ─────────────────────────────────────────────────────────── */
-const SECTION_LABELS = ["Hero","About","Stack","Process","Contact"];
+const SECTION_LABELS = ["Hero","Projects","About","Contact"];
 
 function NavDots({ current, onGo, isMobile }) {
   if (isMobile) return null;
@@ -63,7 +61,6 @@ function NavDots({ current, onGo, isMobile }) {
 function CustomCursor({ isMobile }) {
   const dotRef  = useRef(null);
   const ringRef = useRef(null);
-
   useEffect(() => {
     if (isMobile) return;
     const onMove = (e) => {
@@ -79,7 +76,6 @@ function CustomCursor({ isMobile }) {
     });
     return () => window.removeEventListener("mousemove", onMove);
   }, [isMobile]);
-
   if (isMobile) return null;
   return (
     <>
@@ -97,7 +93,7 @@ function CustomCursor({ isMobile }) {
   );
 }
 
-/* ── Section transitions (unchanged) ────────────────────────────────────────── */
+// 4 transitions — one per section
 const TRANSITIONS = [
   {
     exit:  (el, dir, tl) => tl.to(el, { scale:1.08, autoAlpha:0, filter:"blur(12px)", duration:0.7, ease:"power3.in" }),
@@ -120,15 +116,6 @@ const TRANSITIONS = [
       tl.to(el, { autoAlpha:1, scale:1, rotation:0, duration:0.85, ease:"power3.out" }, "-=0.25");
     },
   },
-  // Process — clip-path wipe from bottom
-  {
-    exit:  (el, dir, tl) => tl.to(el, { clipPath:"inset(0% 0% 100% 0%)", autoAlpha:0, duration:0.65, ease:"power3.in" }),
-    enter: (el, dir, tl) => {
-      gsap.set(el, { autoAlpha:1, clipPath: dir==="down"?"inset(100% 0% 0% 0%)":"inset(0% 0% 100% 0%)" });
-      tl.to(el, { clipPath:"inset(0% 0% 0% 0%)", duration:0.85, ease:"power3.out" }, "-=0.25");
-    },
-  },
-  // Contact — original clip-path wipe
   {
     exit:  (el, dir, tl) => tl.to(el, { clipPath:"inset(0% 0% 100% 0%)", autoAlpha:0, duration:0.65, ease:"power3.in" }),
     enter: (el, dir, tl) => {
@@ -138,41 +125,36 @@ const TRANSITIONS = [
   },
 ];
 
-/* ── Brain choreography — now 5 sections ─────────────────────────────────────── */
+// Brain positions for 4 sections
 function getBrainTarget(sectionIndex, isMobile, isTablet) {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
 
   if (isMobile) {
     const targets = [
-      { x: 0,           y: 0,          scale: 1,    opacity: 1,    rotation: 0   },
-      { x: -vw * 0.05,  y: vh * 0.08,  scale: 0.55, opacity: 0.18, rotation: -8  },
-      { x: vw * 0.05,   y: -vh * 0.05, scale: 0.45, opacity: 0.12, rotation: 12  },
-      { x: 0,           y: -vh * 0.08, scale: 0.42, opacity: 0.10, rotation: 5   },
-      { x: 0,           y: vh * 0.12,  scale: 0.5,  opacity: 0.10, rotation: -5  },
+      { x: 0,           y: 0,          scale: 1,    opacity: 1,    rotation: 0  },
+      { x: -vw * 0.05,  y: vh * 0.08,  scale: 0.45, opacity: 0.10, rotation: -8 },
+      { x: vw * 0.05,   y: -vh * 0.05, scale: 0.40, opacity: 0.08, rotation: 12 },
+      { x: 0,           y: vh * 0.12,  scale: 0.42, opacity: 0.08, rotation: -5 },
     ];
     return targets[sectionIndex] ?? targets[0];
   }
 
   if (isTablet) {
     const targets = [
-      { x: vw * 0.27,   y: 0,           scale: 1,    opacity: 1,    rotation: 0   },
-      { x: vw * 0.30,   y: -vh * 0.05,  scale: 0.65, opacity: 0.22, rotation: -6  },
-      { x: -vw * 0.28,  y: vh * 0.05,   scale: 0.55, opacity: 0.18, rotation: 10  },
-      { x: vw * 0.28,   y: -vh * 0.06,  scale: 0.50, opacity: 0.15, rotation: -4  },
-      { x: vw * 0.25,   y: vh * 0.10,   scale: 0.5,  opacity: 0.14, rotation: -4  },
+      { x: vw * 0.27,  y: 0,           scale: 1,    opacity: 1,    rotation: 0  },
+      { x: vw * 0.30,  y: -vh * 0.05,  scale: 0.60, opacity: 0.18, rotation: -6 },
+      { x: -vw * 0.28, y: vh * 0.05,   scale: 0.50, opacity: 0.15, rotation: 10 },
+      { x: vw * 0.25,  y: vh * 0.10,   scale: 0.45, opacity: 0.12, rotation: -4 },
     ];
     return targets[sectionIndex] ?? targets[0];
   }
 
-  // Desktop
   const targets = [
-    { x: vw * 0.27,   y: 0,           scale: 1,    opacity: 1,    rotation: 0   },
-    { x: vw * 0.38,   y: -vh * 0.06,  scale: 0.55, opacity: 0.20, rotation: -12 },
-    { x: -vw * 0.30,  y: vh * 0.08,   scale: 0.60, opacity: 0.18, rotation: 15  },
-    // Process — brain drifts top-left, small ghost, content is center
-    { x: -vw * 0.32,  y: -vh * 0.10,  scale: 0.48, opacity: 0.14, rotation: -10 },
-    { x: vw * 0.33,   y: -vh * 0.18,  scale: 0.45, opacity: 0.13, rotation: -8  },
+    { x: vw * 0.27,  y: 0,           scale: 1,    opacity: 1,    rotation: 0   },
+    { x: vw * 0.38,  y: -vh * 0.06,  scale: 0.50, opacity: 0.16, rotation: -12 },
+    { x: -vw * 0.30, y: vh * 0.08,   scale: 0.55, opacity: 0.14, rotation: 15  },
+    { x: vw * 0.33,  y: -vh * 0.18,  scale: 0.40, opacity: 0.10, rotation: -8  },
   ];
   return targets[sectionIndex] ?? targets[0];
 }
@@ -187,14 +169,13 @@ export default function Home() {
   const currentRef  = useRef(0);
   const brainRef    = useRef(null);
 
-  const heroRef    = useRef(null);
-  const aboutRef   = useRef(null);
-  const stackRef   = useRef(null);
-  const processRef = useRef(null);
-  const contactRef = useRef(null);
+  const heroRef       = useRef(null);
+  const projectsRef   = useRef(null);
+  const aboutStackRef = useRef(null);
+  const contactRef    = useRef(null);
 
   const sectionRefs = useMemo(
-    () => [heroRef, aboutRef, stackRef, processRef, contactRef],
+    () => [heroRef, projectsRef, aboutStackRef, contactRef],
     []
   );
 
@@ -205,26 +186,18 @@ export default function Home() {
     const midScale   = target.scale * 0.82;
     const travelTime = 0.38;
     const arriveTime = 0.72;
-
     gsap.to(el, {
       scale:  midScale,
       filter: "blur(6px) drop-shadow(0 0 60px rgba(44,100,200,0.55))",
-      duration: travelTime,
-      ease: "power2.in",
-      overwrite: "auto",
+      duration: travelTime, ease: "power2.in", overwrite: "auto",
       onComplete: () => {
         gsap.to(el, {
-          x:        target.x,
-          y:        target.y,
-          scale:    target.scale,
-          opacity:  target.opacity,
-          rotation: target.rotation,
+          x: target.x, y: target.y,
+          scale: target.scale, opacity: target.opacity, rotation: target.rotation,
           filter: isMobile
             ? "blur(0px) drop-shadow(0 0 30px rgba(44,100,200,0.4))"
             : "blur(0px) drop-shadow(0 0 60px rgba(44,100,200,0.55)) drop-shadow(0 0 120px rgba(44,80,180,0.25))",
-          duration: arriveTime,
-          ease: "power3.out",
-          overwrite: "auto",
+          duration: arriveTime, ease: "power3.out", overwrite: "auto",
         });
       },
     });
@@ -246,7 +219,6 @@ export default function Home() {
 
     gsap.set(next, { zIndex:3, clipPath:"inset(0% 0% 0% 0%)" });
     gsap.set(cur,  { zIndex:2 });
-
     animateBrain(nextIndex, dir);
 
     const tl = gsap.timeline({
@@ -262,7 +234,6 @@ export default function Home() {
         isAnimating.current = false;
       },
     });
-
     exitTrans.exit(cur, dir, tl);
     enterTrans.enter(next, dir, tl);
   }, [sectionRefs, animateBrain]);
@@ -337,7 +308,6 @@ export default function Home() {
         onGo={(i) => goTo(i, i > currentRef.current ? "down" : "up")}
         isMobile={isMobile}
       />
-
       <NeuralBrain isMobile={isMobile} containerRef={brainRef} />
 
       <main style={{
@@ -346,11 +316,10 @@ export default function Home() {
         background:"#080808",
         cursor: isMobile ? "auto" : "none",
       }}>
-        <Hero      ref={heroRef}    isMobile={isMobile} />
-        <About     ref={aboutRef}   isMobile={isMobile} />
-        <TechStack ref={stackRef}   isMobile={isMobile} />
-        <Process   ref={processRef} isMobile={isMobile} />
-        <Contact   ref={contactRef} isMobile={isMobile} />
+        <Hero       ref={heroRef}       isMobile={isMobile} />
+        <Projects   ref={projectsRef}   isMobile={isMobile} />
+        <AboutStack ref={aboutStackRef} isMobile={isMobile} />
+        <Contact    ref={contactRef}    isMobile={isMobile} />
       </main>
     </>
   );

@@ -2,10 +2,6 @@ import { useRef, useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import gsap from "gsap";
 
-// ── useBreakpoint ─────────────────────────────────────────────────────────
-// Returns "mobile" (<640px), "tablet" (640–1023px), or "desktop" (≥1024px).
-// Accepts an optional onDesktop callback fired during resize — avoids
-// calling setState inside a useEffect body (react-hooks/set-state-in-effect).
 function useBreakpoint(onDesktop) {
   const get = useCallback(() => {
     const w = window.innerWidth;
@@ -14,15 +10,12 @@ function useBreakpoint(onDesktop) {
     return "desktop";
   }, []);
   const [bp, setBp] = useState(get);
-  // Keep a stable ref so the resize handler always sees the latest callback
-  // without needing it as a dependency.
   const onDesktopRef = useRef(onDesktop);
   useEffect(() => { onDesktopRef.current = onDesktop; });
   useEffect(() => {
     const h = () => {
       const next = get();
       setBp(next);
-      // Fire callback inside the event handler — not inside an effect body.
       if (next === "desktop") onDesktopRef.current?.();
     };
     window.addEventListener("resize", h);
@@ -31,7 +24,6 @@ function useBreakpoint(onDesktop) {
   return bp;
 }
 
-// ── SVG Icons ─────────────────────────────────────────────────────────────
 const GitHubSVG = (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
     <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" />
@@ -47,341 +39,172 @@ const WhatsAppSVG = (
     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z" />
   </svg>
 );
-const FacebookSVG = (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-  </svg>
-);
 
 const SOCIAL_LINKS = [
   { icon: GitHubSVG,    href: "https://github.com/riadhbellala",       label: "GitHub"    },
   { icon: InstagramSVG, href: "https://www.instagram.com/r_iiiadh.b/", label: "Instagram" },
   { icon: WhatsAppSVG,  href: "https://wa.me/213555711088",            label: "WhatsApp"  },
-  { icon: FacebookSVG,  href: "https://facebook.com/riadh",            label: "Facebook"  },
 ];
 
-// ── HamburgerIcon ─────────────────────────────────────────────────────────
 function HamburgerIcon({ open }) {
   const base = {
-    display: "block",
-    width: "22px", height: "1.5px",
-    background: "rgba(255,255,255,0.7)",
-    transition: "transform 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.25s",
-    transformOrigin: "center",
+    display:"block", width:"22px", height:"1.5px",
+    background:"rgba(255,255,255,0.7)",
+    transition:"transform 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.25s",
+    transformOrigin:"center",
   };
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "5px", cursor: "pointer" }}>
-      <span style={{
-        ...base,
-        transform: open ? "translateY(6.5px) rotate(45deg)" : "none",
-      }} />
-      <span style={{
-        ...base,
-        opacity: open ? 0 : 1,
-        transform: open ? "scaleX(0)" : "scaleX(1)",
-      }} />
-      <span style={{
-        ...base,
-        transform: open ? "translateY(-6.5px) rotate(-45deg)" : "none",
-      }} />
+    <div style={{ display:"flex", flexDirection:"column", gap:"5px", cursor:"pointer" }}>
+      <span style={{ ...base, transform: open?"translateY(6.5px) rotate(45deg)":"none" }}/>
+      <span style={{ ...base, opacity:open?0:1, transform:open?"scaleX(0)":"scaleX(1)" }}/>
+      <span style={{ ...base, transform: open?"translateY(-6.5px) rotate(-45deg)":"none" }}/>
     </div>
   );
 }
 
-// ── MobileMenu ────────────────────────────────────────────────────────────
 function MobileMenu({ open, onClose }) {
   const menuRef  = useRef(null);
-  const linksRef = useRef([]);
   const iconsRef = useRef([]);
 
   useEffect(() => {
     if (!menuRef.current) return;
-
     if (open) {
-      gsap.set(menuRef.current, { autoAlpha: 1, yPercent: -100 });
-      gsap.to(menuRef.current, {
-        yPercent: 0,
-        duration: 0.55,
-        ease: "power3.out",
-      });
-      gsap.fromTo(
-        linksRef.current,
-        { opacity: 0, y: 24 },
-        { opacity: 1, y: 0, duration: 0.4, ease: "power2.out",
-          stagger: 0.07, delay: 0.2 }
-      );
-      gsap.fromTo(
-        iconsRef.current,
-        { opacity: 0, scale: 0.7 },
-        { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(2)",
-          stagger: 0.06, delay: 0.35 }
+      gsap.set(menuRef.current, { autoAlpha:1, yPercent:-100 });
+      gsap.to(menuRef.current, { yPercent:0, duration:0.5, ease:"power3.out" });
+      gsap.fromTo(iconsRef.current,
+        { opacity:0, scale:0.7 },
+        { opacity:1, scale:1, duration:0.35, ease:"back.out(2)", stagger:0.06, delay:0.2 }
       );
     } else {
       gsap.to(menuRef.current, {
-        yPercent: -100,
-        duration: 0.4,
-        ease: "power3.in",
-        onComplete: () => gsap.set(menuRef.current, { autoAlpha: 0 }),
+        yPercent:-100, duration:0.4, ease:"power3.in",
+        onComplete: () => gsap.set(menuRef.current, { autoAlpha:0 }),
       });
     }
   }, [open]);
 
-  const NAV_LINKS = [
-    { to: "/",         label: "Home"     },
-    { to: "/projects", label: "Projects" },
-  ];
-
   return (
-    <div
-      ref={menuRef}
-      style={{
-        position: "fixed", inset: 0,
-        background: "#080808",
-        borderBottom: "1px solid rgba(44,85,132,0.25)",
-        zIndex: 9000,
-        display: "flex", flexDirection: "column",
-        justifyContent: "center", alignItems: "center",
-        gap: "0",
-        visibility: "hidden", opacity: 0,
+    <div ref={menuRef} style={{
+      position:"fixed", inset:0, background:"#080808",
+      borderBottom:"1px solid rgba(44,85,132,0.25)",
+      zIndex:9000, display:"flex", flexDirection:"column",
+      justifyContent:"center", alignItems:"center",
+      visibility:"hidden", opacity:0,
+    }}>
+      {/* Single CTA — scroll to contact via mailto */}
+      <a href="mailto:riadh5726@gmail.com" onClick={onClose} style={{
+        fontSize:"clamp(2rem,10vw,4rem)", fontWeight:900,
+        letterSpacing:"0.08em", textTransform:"uppercase",
+        textDecoration:"none",
+        color:"transparent",
+        WebkitTextStroke:"1px rgba(255,255,255,0.55)",
+        marginBottom:"48px",
+        transition:"color 0.25s, -webkit-text-stroke 0.25s",
+        lineHeight:1.1,
       }}
-    >
-      <nav style={{
-        display: "flex", flexDirection: "column",
-        alignItems: "center", gap: "8px",
-        marginBottom: "52px",
-      }}>
-        {NAV_LINKS.map(({ to, label }, i) => (
-          <Link
-            key={label}
-            to={to}
-            ref={(el) => (linksRef.current[i] = el)}
-            onClick={onClose}
-            style={{
-              fontSize: "clamp(2.8rem, 12vw, 5rem)",
-              fontWeight: 900,
-              letterSpacing: "0.12em",
-              textTransform: "uppercase",
-              textDecoration: "none",
-              color: "transparent",
-              WebkitTextStroke: "1px rgba(255,255,255,0.55)",
-              opacity: 0,
-              transition: "color 0.25s, -webkit-text-stroke 0.25s",
-              lineHeight: 1.1,
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = "#2C5584";
-              e.currentTarget.style.WebkitTextStroke = "1px #2C5584";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = "transparent";
-              e.currentTarget.style.WebkitTextStroke = "1px rgba(255,255,255,0.55)";
-            }}
-          >
-            {label}
-          </Link>
-        ))}
-      </nav>
+      onMouseEnter={e=>{e.currentTarget.style.color="#2C5584";e.currentTarget.style.WebkitTextStroke="1px #2C5584";}}
+      onMouseLeave={e=>{e.currentTarget.style.color="transparent";e.currentTarget.style.WebkitTextStroke="1px rgba(255,255,255,0.55)";}}>
+        Hire me
+      </a>
 
-      <div style={{ display: "flex", gap: "28px" }}>
+      <div style={{ display:"flex", gap:"28px" }}>
         {SOCIAL_LINKS.map(({ icon, href, label }, i) => (
-          <a
-            key={label}
-            ref={(el) => (iconsRef.current[i] = el)}
-            href={href}
-            target="_blank"
-            rel="noreferrer"
-            aria-label={label}
-            style={{
-              color: "rgba(255,255,255,0.35)",
-              transition: "color 0.25s",
-              display: "flex", alignItems: "center",
-              opacity: 0,
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = "#fff")}
-            onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.35)")}
-          >
-            {icon}
-          </a>
+          <a key={label} ref={el=>(iconsRef.current[i]=el)} href={href}
+            target="_blank" rel="noreferrer" aria-label={label}
+            style={{ color:"rgba(255,255,255,0.35)", transition:"color 0.25s", display:"flex", alignItems:"center", opacity:0 }}
+            onMouseEnter={e=>(e.currentTarget.style.color="#fff")}
+            onMouseLeave={e=>(e.currentTarget.style.color="rgba(255,255,255,0.35)")}
+          >{icon}</a>
         ))}
       </div>
 
-      <p style={{
-        position: "absolute", bottom: "28px",
-        fontSize: "8px", letterSpacing: "0.45em", textTransform: "uppercase",
-        color: "rgba(255,255,255,0.12)",
-      }}>
+      <p style={{ position:"absolute", bottom:"28px", fontSize:"8px", letterSpacing:"0.45em", textTransform:"uppercase", color:"rgba(255,255,255,0.12)" }}>
         Riadh · Portfolio
       </p>
     </div>
   );
 }
 
-// ── Navbar ────────────────────────────────────────────────────────────────
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
-
-  // Pass setMenuOpen(false) as the onDesktop callback so the menu closes
-  // during the resize event — not inside a useEffect body.
   const bp       = useBreakpoint(() => setMenuOpen(false));
   const isMobile = bp === "mobile";
-  const isTablet = bp === "tablet";
 
   const navRef = useRef(null);
-  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    gsap.fromTo(
-      navRef.current,
-      { opacity: 0, y: -20 },
-      { opacity: 1, y: 0, duration: 0.8, ease: "power2.out" }
-    );
-
-    const handleScroll = () => setScrolled(window.scrollY > 50);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    gsap.fromTo(navRef.current, { opacity:0, y:-20 }, { opacity:1, y:0, duration:0.8, ease:"power2.out" });
   }, []);
 
-  // Lock body scroll when mobile menu is open
   useEffect(() => {
     document.body.style.overflow = menuOpen ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
   }, [menuOpen]);
 
   const iconStyle = {
-    color: "rgba(255,255,255,0.5)",
-    transition: "color 0.3s",
-    display: "flex", alignItems: "center",
-    padding: "8px",
-    margin: "-8px",
-  };
-  const onEnter = (e) => (e.currentTarget.style.color = "#ffffff");
-  const onLeave = (e) => (e.currentTarget.style.color = "rgba(255,255,255,0.5)");
-
-  const linkStyle = {
-    color: "rgba(255,255,255,0.5)",
-    fontSize: "0.7rem",
-    letterSpacing: "0.22em",
-    textTransform: "uppercase",
-    textDecoration: "none",
-    transition: "color 0.3s",
-    padding: "8px 0",
+    color:"rgba(255,255,255,0.5)", transition:"color 0.3s",
+    display:"flex", alignItems:"center", padding:"8px", margin:"-8px",
   };
 
   return (
     <>
-      <nav
-        ref={navRef}
-        style={{
-          position: "fixed",
-          top: 0, left: 0,
-          width: "100%",
-          zIndex: 8000,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: isMobile
-            ? "16px 20px"
-            : isTablet
-            ? "20px 32px"
-            : "24px 48px",
-          transition: "background 0.4s ease, backdrop-filter 0.4s ease",
-          background: scrolled || menuOpen
-            ? "rgba(8,8,8,0.85)"
-            : "transparent",
-          backdropFilter: scrolled || menuOpen ? "blur(14px)" : "none",
-        }}
-      >
-        {/* ── LEFT: Social icons (desktop/tablet) OR empty spacer (mobile) ── */}
-        <div style={{
-          display: "flex", gap: "20px", alignItems: "center",
-          minWidth: isMobile ? "40px" : "auto",
-        }}>
+      <nav ref={navRef} style={{
+        position:"fixed", top:0, left:0, width:"100%", zIndex:8000,
+        display:"flex", alignItems:"center", justifyContent:"space-between",
+        padding: isMobile ? "16px 20px" : "24px 48px",
+        background:"transparent",
+      }}>
+        {/* Left: social icons */}
+        <div style={{ display:"flex", gap:"20px", alignItems:"center", minWidth: isMobile?"40px":"auto" }}>
           {!isMobile && SOCIAL_LINKS.map(({ icon, href, label }) => (
-            <a
-              key={label}
-              href={href}
-              target="_blank"
-              rel="noreferrer"
-              aria-label={label}
+            <a key={label} href={href} target="_blank" rel="noreferrer" aria-label={label}
               style={iconStyle}
-              onMouseEnter={onEnter}
-              onMouseLeave={onLeave}
-            >
-              {icon}
-            </a>
+              onMouseEnter={e=>(e.currentTarget.style.color="#fff")}
+              onMouseLeave={e=>(e.currentTarget.style.color="rgba(255,255,255,0.5)")}
+            >{icon}</a>
           ))}
         </div>
 
-        {/* ── CENTER: Logo "R" ── */}
-        <Link
-          to="/"
-          style={{
-            position: "absolute",
-            left: "50%",
-            transform: "translateX(-50%)",
-            color: "transparent",
-            WebkitTextStroke: "1.5px #2C5584",
-            fontWeight: 900,
-            fontSize: isMobile ? "2rem" : isTablet ? "2.4rem" : "2.8rem",
-            letterSpacing: "0.2em",
-            textTransform: "uppercase",
-            textDecoration: "none",
-            lineHeight: 1,
-            transition: "WebkitTextStroke 0.3s",
-            pointerEvents: "auto",
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.color = "#2C5584"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.color = "transparent"; }}
-        >
+        {/* Center: logo */}
+        <Link to="/" style={{
+          position:"absolute", left:"50%", transform:"translateX(-50%)",
+          color:"transparent",
+          WebkitTextStroke:"1.5px #2C5584",
+          fontWeight:900,
+          fontSize: isMobile ? "2rem" : "2.8rem",
+          letterSpacing:"0.2em", textTransform:"uppercase",
+          textDecoration:"none", lineHeight:1,
+        }}
+        onMouseEnter={e=>{e.currentTarget.style.color="#2C5584";}}
+        onMouseLeave={e=>{e.currentTarget.style.color="transparent";}}>
           R
         </Link>
 
-        {/* ── RIGHT: Nav links (desktop/tablet) OR Hamburger (mobile) ── */}
-        <div style={{
-          display: "flex", gap: "28px", alignItems: "center",
-          minWidth: isMobile ? "40px" : "auto",
-          justifyContent: "flex-end",
-        }}>
+        {/* Right: contact link or hamburger */}
+        <div style={{ display:"flex", gap:"20px", alignItems:"center", minWidth: isMobile?"40px":"auto", justifyContent:"flex-end" }}>
           {!isMobile && (
-            <>
-              <Link to="/"
-                style={linkStyle}
-                onMouseEnter={(e) => (e.currentTarget.style.color = "#fff")}
-                onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.5)")}
-              >
-                Home
-              </Link>
-              <Link to="/projects"
-                style={linkStyle}
-                onMouseEnter={(e) => (e.currentTarget.style.color = "#fff")}
-                onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.5)")}
-              >
-                Projects
-              </Link>
-            </>
-          )}
-
-          {isMobile && (
-            <button
-              onClick={() => setMenuOpen((v) => !v)}
-              aria-label={menuOpen ? "Close menu" : "Open menu"}
-              aria-expanded={menuOpen}
-              style={{
-                background: "none", border: "none",
-                cursor: "pointer", padding: "4px",
-                zIndex: 9100,
-                position: "relative",
-              }}
+            <a href="mailto:riadh5726@gmail.com" style={{
+              color:"rgba(255,255,255,0.4)", fontSize:"0.7rem",
+              letterSpacing:"0.22em", textTransform:"uppercase", textDecoration:"none",
+              transition:"color 0.3s",
+            }}
+            onMouseEnter={e=>(e.currentTarget.style.color="#fff")}
+            onMouseLeave={e=>(e.currentTarget.style.color="rgba(255,255,255,0.4)")}
             >
-              <HamburgerIcon open={menuOpen} />
+              Hire me
+            </a>
+          )}
+          {isMobile && (
+            <button onClick={()=>setMenuOpen(v=>!v)}
+              aria-label={menuOpen?"Close menu":"Open menu"}
+              style={{ background:"none",border:"none",cursor:"pointer",padding:"4px",zIndex:9100,position:"relative" }}>
+              <HamburgerIcon open={menuOpen}/>
             </button>
           )}
         </div>
       </nav>
 
-      {isMobile && (
-        <MobileMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
-      )}
+      {isMobile && <MobileMenu open={menuOpen} onClose={()=>setMenuOpen(false)}/>}
     </>
   );
 }
