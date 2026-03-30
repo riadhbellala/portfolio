@@ -316,7 +316,8 @@ export default function Home() {
         background:"#080808",
         cursor: isMobile ? "auto" : "none",
       }}>
-        <Hero       ref={heroRef}       isMobile={isMobile} />
+        {/* Pass goTo so Hero nav cards can trigger section transitions */}
+        <Hero       ref={heroRef}       isMobile={isMobile} onGoTo={goTo} />
         <Projects   ref={projectsRef}   isMobile={isMobile} />
         <AboutStack ref={aboutStackRef} isMobile={isMobile} />
         <Contact    ref={contactRef}    isMobile={isMobile} />

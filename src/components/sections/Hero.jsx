@@ -1,6 +1,5 @@
 import { useRef, useEffect, useState, useCallback, forwardRef } from "react";
 import gsap from "gsap";
-import { Link } from "react-router-dom";
 
 /* ─── Breakpoint ─────────────────────────────────────────────────────────── */
 function useBreakpoint() {
@@ -19,8 +18,7 @@ function useBreakpoint() {
   return bp;
 }
 
-/* ─── Syntax-highlight span — OUTSIDE any component ─────────────────────── */
-// Moved out of CodeLoader to satisfy react-hooks/static-components rule.
+/* ─── Syntax-highlight span ──────────────────────────────────────────────── */
 function S({ c, children }) {
   return <span style={{ color: c }}>{children}</span>;
 }
@@ -121,30 +119,114 @@ function StatPill({ value, label, delay, entered }) {
   );
 }
 
-/* ─── Code lines data — static, defined once outside any component ────────── */
-// Using plain objects instead of JSX in an array avoids the
-// "component created during render" lint error entirely.
+/* ─── Code lines data ────────────────────────────────────────────────────── */
 const CODE_LINES = [
   [
-    { c: "#ce93d8", t: "import" }, { c: "rgba(255,255,255,0.7)", t: "{identity}" },
-    { c: "#ce93d8", t: "from" },   { c: "#a5d6a7", t: "'@core/self'" },
+    { c: "#ce93d8", t: "import" }, { c: "rgba(255,255,255,0.7)", t: " {identity} " },
+    { c: "#ce93d8", t: "from" },   { c: "#a5d6a7", t: " '@core/self'" },
   ],
   [
-    { c: "#ce93d8", t: "const" }, { c: "#4fc3f7", t: "developer" },
-    { c: "rgba(255,255,255,0.4)", t: "=" }, { c: "rgba(255,255,255,0.7)", t: "{" },
+    { c: "#ce93d8", t: "const" }, { c: "#4fc3f7", t: " developer" },
+    { c: "rgba(255,255,255,0.4)", t: " =" }, { c: "rgba(255,255,255,0.7)", t: " {" },
   ],
   [
     { c: "rgba(255,255,255,0.38)", t: "\u00a0\u00a0name:" },
-    { c: "#a5d6a7", t: '"Riadh Bellala"' },
+    { c: "#a5d6a7", t: ' "Riadh Bellala"' },
   ],
   [
     { c: "rgba(255,255,255,0.38)", t: "\u00a0\u00a0role:" },
-    { c: "#a5d6a7", t: '"Frontend Engineer"' },
+    { c: "#a5d6a7", t: ' "Frontend Engineer"' },
   ],
   [
     { c: "rgba(255,255,255,0.7)", t: "}" },
   ],
 ];
+
+/* ─── Nav card items — section indices match Home.jsx sectionRefs order ─── */
+// 0=Hero, 1=Projects, 2=About, 3=Contact
+const NAV_ITEMS = [
+  { label: "Work",    sub: "View my projects",     sectionIndex: 1, icon: "◈" },
+  { label: "About",   sub: "Skills & process",     sectionIndex: 2, icon: "?" },
+  { label: "Contact", sub: "Let's build together", sectionIndex: 3, icon: "→" },
+];
+
+/* ─── Nav card ───────────────────────────────────────────────────────────── */
+function NavCard({ item, onGoTo, isMobile }) {
+  const innerRef = useRef(null);
+
+  const handleClick = useCallback(() => {
+    const dir = item.sectionIndex > 0 ? "down" : "up";
+    onGoTo(item.sectionIndex, dir);
+  }, [item.sectionIndex, onGoTo]);
+
+  const handleMouseEnter = useCallback((e) => {
+    gsap.to(e.currentTarget, { x: 6, duration: 0.3, ease: "power2.out" });
+    if (innerRef.current) {
+      innerRef.current.style.borderColor = "rgba(44,85,132,0.45)";
+      innerRef.current.style.background  = "rgba(44,85,132,0.1)";
+    }
+  }, []);
+
+  const handleMouseLeave = useCallback((e) => {
+    gsap.to(e.currentTarget, { x: 0, duration: 0.4, ease: "power2.out" });
+    if (innerRef.current) {
+      innerRef.current.style.borderColor = "rgba(44,85,132,0.18)";
+      innerRef.current.style.background  = "rgba(44,85,132,0.04)";
+    }
+  }, []);
+
+  return (
+    <button
+      onClick={handleClick}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      style={{
+        display: "block", width: "100%",
+        background: "none", border: "none",
+        padding: 0, cursor: "pointer", textAlign: "left",
+      }}
+    >
+      <div ref={innerRef} style={{
+        padding: isMobile ? "12px 14px" : "14px 18px",
+        border: "1px solid rgba(44,85,132,0.18)",
+        borderRadius: "12px",
+        background: "rgba(44,85,132,0.04)",
+        display: "flex", alignItems: "center", gap: "16px",
+        transition: "border-color 0.25s, background 0.25s",
+      }}>
+        <div style={{
+          width: "38px", height: "38px", flexShrink: 0,
+          border: "1px solid rgba(44,85,132,0.3)",
+          borderRadius: "8px",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          background: "rgba(44,85,132,0.08)",
+          fontFamily: "'DM Sans', sans-serif",
+          fontSize: "16px",
+          color: "rgba(44,85,132,0.85)",
+        }}>{item.icon}</div>
+        <div>
+          <p style={{
+            margin: "0 0 2px",
+            fontFamily: "'DM Sans', sans-serif", fontWeight: 700,
+            fontSize: "14px", color: "rgba(255,255,255,0.85)",
+            letterSpacing: "-0.02em",
+          }}>{item.label}</p>
+          <p style={{
+            margin: 0,
+            fontFamily: "Georgia, serif", fontStyle: "italic",
+            fontSize: "10px", color: "rgba(255,255,255,0.25)",
+            letterSpacing: "0.05em",
+          }}>{item.sub}</p>
+        </div>
+        <span style={{
+          marginLeft: "auto",
+          fontFamily: "'DM Sans', sans-serif",
+          fontSize: "16px", color: "rgba(44,85,132,0.5)",
+        }}>→</span>
+      </div>
+    </button>
+  );
+}
 
 /* ═══════════════════════════════════════════════════════════════
    FULL-SCREEN CODE LOADER
@@ -207,7 +289,11 @@ function CodeLoader({ onDone }) {
   /* ── progress timeline ── */
   useEffect(() => {
     const tl = gsap.timeline();
-    tl.fromTo(centerRef.current, { opacity: 0, y: 20, scale: 0.94 }, { opacity: 1, y: 0, scale: 1, duration: 0.7, ease: "power3.out" }, 0.35);
+    tl.fromTo(centerRef.current,
+      { opacity: 0, y: 20, scale: 0.94 },
+      { opacity: 1, y: 0, scale: 1, duration: 0.7, ease: "power3.out" },
+      0.35
+    );
 
     STATUS.forEach(({ pct, text }, i) => {
       const at = 0.5 + i * 0.55;
@@ -290,7 +376,7 @@ function CodeLoader({ onDone }) {
 /* ═══════════════════════════════════════════════════════════════
    HERO
 ═══════════════════════════════════════════════════════════════ */
-const Hero = forwardRef(function Hero({ isMobile: isMobileProp }, ref) {
+const Hero = forwardRef(function Hero({ isMobile: isMobileProp, onGoTo }, ref) {
   const bp       = useBreakpoint();
   const isTablet = bp === "tablet";
   const isMobile = isMobileProp ?? bp === "mobile";
@@ -340,9 +426,6 @@ const Hero = forwardRef(function Hero({ isMobile: isMobileProp }, ref) {
   /* ── trigger entrance after loader ── */
   useEffect(() => {
     if (loaded) {
-      // Use rAF to defer past the current render cycle, avoiding
-      // the react-hooks/set-state-in-effect warning while keeping
-      // the GSAP call outside React's batching.
       const id = requestAnimationFrame(() => playEntrance());
       return () => cancelAnimationFrame(id);
     }
@@ -357,12 +440,6 @@ const Hero = forwardRef(function Hero({ isMobile: isMobileProp }, ref) {
     window.addEventListener("mousemove", onMove);
     return () => window.removeEventListener("mousemove", onMove);
   }, [isMobile, loaded]);
-
-  const handleNavigate = () => {
-    document.body.style.overflow = "";
-    document.body.style.height = "";
-    document.documentElement.style.overflow = "";
-  };
 
   const sectionStyle = {
     position: "fixed", inset: 0,
@@ -385,32 +462,74 @@ const Hero = forwardRef(function Hero({ isMobile: isMobileProp }, ref) {
           <Orb style={{ width: "320px", height: "320px", top: "-80px", right: "-100px" }}/>
           <Orb style={{ width: "240px", height: "240px", bottom: "-60px", left: "-80px" }}/>
           <GridFloor gridRef={gridRef}/>
-          <div style={{ position: "relative", zIndex: 1, width: "100%", display: "flex", flexDirection: "column", gap: "24px" }}>
-            <p ref={eyebrowRef} style={{ margin: 0, fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: "11px", color: "rgba(44,85,132,0.65)", letterSpacing: "0.12em" }}>
+
+          <div style={{
+            position: "relative", zIndex: 1, width: "100%",
+            display: "flex", flexDirection: "column", gap: "20px",
+            paddingTop: "24px",
+          }}>
+            {/* eyebrow */}
+            <p ref={eyebrowRef} style={{
+              margin: 0, fontFamily: "Georgia, serif", fontStyle: "italic",
+              fontSize: "11px", color: "rgba(44,85,132,0.65)", letterSpacing: "0.12em",
+            }}>
               Nice to meet you —
             </p>
+
+            {/* name */}
             <div ref={nameRef}>
-              <h1 style={{ margin: "0 0 10px", fontFamily: "'DM Sans', sans-serif", fontWeight: 800, fontSize: "clamp(2.2rem,11vw,3.2rem)", letterSpacing: "-0.04em", lineHeight: 0.93, color: "rgba(255,255,255,0.92)" }}>
+              <h1 style={{
+                margin: "0 0 10px",
+                fontFamily: "'DM Sans', sans-serif", fontWeight: 800,
+                fontSize: "clamp(2.2rem,11vw,3.2rem)",
+                letterSpacing: "-0.04em", lineHeight: 0.93,
+                color: "rgba(255,255,255,0.92)",
+              }}>
                 Riadh<br/>
                 <span style={{ color: "transparent", WebkitTextStroke: "1.5px rgba(44,85,132,0.8)" }}>Bellala</span>
               </h1>
             </div>
+
+            {/* divider */}
             <div ref={lineRef} style={{ height: "1px", background: "linear-gradient(90deg, rgba(44,85,132,0.7), transparent)", width: "160px" }}/>
-            <p ref={roleRef} style={{ margin: 0, fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: "12px", color: "rgba(255,255,255,0.2)", letterSpacing: "0.06em" }}>
+
+            {/* role */}
+            <p ref={roleRef} style={{
+              margin: 0, fontFamily: "Georgia, serif", fontStyle: "italic",
+              fontSize: "12px", color: "rgba(255,255,255,0.2)", letterSpacing: "0.06em",
+            }}>
               Frontend Developer · CS Student · Algeria
             </p>
-            <p ref={bioRef} style={{ margin: 0, fontFamily: "Georgia, serif", fontSize: "13px", lineHeight: 1.85, color: "rgba(255,255,255,0.3)", fontStyle: "italic" }}>
+
+            {/* bio */}
+            <p ref={bioRef} style={{
+              margin: 0, fontFamily: "Georgia, serif",
+              fontSize: "13px", lineHeight: 1.85,
+              color: "rgba(255,255,255,0.3)", fontStyle: "italic",
+            }}>
               I craft interfaces that move — clean code, purposeful animation, and design that earns attention.
             </p>
+
+            {/* stats */}
             <div ref={statsRef} style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
               <StatPill value="3+"  label="Years building"   delay={0}   entered={entered}/>
               <StatPill value="10+" label="Projects shipped" delay={0.1} entered={entered}/>
             </div>
+
+            {/* status */}
             <div ref={statusRef} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
               <span style={{ width: "7px", height: "7px", borderRadius: "50%", background: "#4ade80", display: "inline-block", animation: "hero-glow 2s ease-in-out infinite" }}/>
               <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "10px", letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(255,255,255,0.25)" }}>Available for projects</span>
             </div>
+
+            {/* nav cards — mobile */}
+            <div ref={ctaRef} style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              {NAV_ITEMS.map((item) => (
+                <NavCard key={item.label} item={item} onGoTo={onGoTo} isMobile={true}/>
+              ))}
+            </div>
           </div>
+
           <style>{`
             @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;800&display=swap');
             @keyframes hero-glow { 0%,100%{box-shadow:0 0 6px rgba(74,222,128,0.5)} 50%{box-shadow:0 0 18px rgba(74,222,128,0.9)} }
@@ -452,7 +571,8 @@ const Hero = forwardRef(function Hero({ isMobile: isMobileProp }, ref) {
           width: "100%", maxWidth: "1280px",
           alignItems: "center",
         }}>
-          {/* COL 1 */}
+
+          {/* COL 1 — identity */}
           <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
             <p ref={eyebrowRef} style={{ margin: 0, fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: "12px", color: "rgba(44,85,132,0.65)", letterSpacing: "0.14em" }}>
               Nice to meet you —
@@ -477,7 +597,7 @@ const Hero = forwardRef(function Hero({ isMobile: isMobileProp }, ref) {
             </div>
           </div>
 
-          {/* COL 2 — separator */}
+          {/* COL 2 — separator (desktop only) */}
           {!isTablet && (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "32px", height: "100%" }}>
               <div style={{ width: "1px", flex: 1, maxHeight: "280px", background: "linear-gradient(to bottom, transparent, rgba(44,85,132,0.22), transparent)" }}/>
@@ -488,49 +608,17 @@ const Hero = forwardRef(function Hero({ isMobile: isMobileProp }, ref) {
             </div>
           )}
 
-          {/* COL 3 — CTA */}
+          {/* COL 3 — nav cards */}
           <div ref={ctaRef} style={{ display: "flex", flexDirection: "column", gap: "32px", opacity: 0 }}>
             <p style={{ margin: 0, fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: "10px", letterSpacing: "0.2em", color: "rgba(44,85,132,0.5)", textTransform: "uppercase" }}>
               Quick links
             </p>
-            {[
-              { label: "Work",    sub: "View my projects",     to: "/projects", icon: "◈" },
-              { label: "About",   sub: "Skills & process",     to: "#about",    icon: "?" },
-              { label: "Contact", sub: "Let's build together", to: "#contact",  icon: "→" },
-            ].map((item) => (
-              <Link
-                key={item.label}
-                to={item.to}
-                onClick={handleNavigate}
-                style={{ textDecoration: "none" }}
-                onMouseEnter={e => {
-                  gsap.to(e.currentTarget, { x: 6, duration: 0.3, ease: "power2.out" });
-                  e.currentTarget.querySelector(".nav-card-inner").style.borderColor = "rgba(44,85,132,0.45)";
-                  e.currentTarget.querySelector(".nav-card-inner").style.background  = "rgba(44,85,132,0.1)";
-                }}
-                onMouseLeave={e => {
-                  gsap.to(e.currentTarget, { x: 0, duration: 0.4, ease: "power2.out" });
-                  e.currentTarget.querySelector(".nav-card-inner").style.borderColor = "rgba(44,85,132,0.18)";
-                  e.currentTarget.querySelector(".nav-card-inner").style.background  = "rgba(44,85,132,0.04)";
-                }}
-              >
-                <div className="nav-card-inner" style={{
-                  padding: "14px 18px",
-                  border: "1px solid rgba(44,85,132,0.18)",
-                  borderRadius: "12px",
-                  background: "rgba(44,85,132,0.04)",
-                  display: "flex", alignItems: "center", gap: "16px",
-                  transition: "border-color 0.25s, background 0.25s",
-                }}>
-                  <div style={{ width: "38px", height: "38px", flexShrink: 0, border: "1px solid rgba(44,85,132,0.3)", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(44,85,132,0.08)", fontFamily: "'DM Sans', sans-serif", fontSize: "16px", color: "rgba(44,85,132,0.85)" }}>{item.icon}</div>
-                  <div>
-                    <p style={{ margin: "0 0 2px", fontFamily: "'DM Sans', sans-serif", fontWeight: 700, fontSize: "14px", color: "rgba(255,255,255,0.85)", letterSpacing: "-0.02em" }}>{item.label}</p>
-                    <p style={{ margin: 0, fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: "10px", color: "rgba(255,255,255,0.25)", letterSpacing: "0.05em" }}>{item.sub}</p>
-                  </div>
-                  <span style={{ marginLeft: "auto", fontFamily: "'DM Sans', sans-serif", fontSize: "16px", color: "rgba(44,85,132,0.5)" }}>→</span>
-                </div>
-              </Link>
-            ))}
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              {NAV_ITEMS.map((item) => (
+                <NavCard key={item.label} item={item} onGoTo={onGoTo} isMobile={false}/>
+              ))}
+            </div>
 
             <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "4px" }}>
               <div style={{ height: "1px", width: "32px", background: "rgba(44,85,132,0.3)" }}/>
