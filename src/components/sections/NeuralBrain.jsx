@@ -22,7 +22,7 @@ export default function NeuralBrain({ isMobile, containerRef: externalRef }) {
   const posX         = useRef(0);
   const posY         = useRef(0);
 
-  // Track dragging state to toggle pointerEvents
+  // Only enable pointer events on canvas while dragging — otherwise clicks fall through
   const [dragging, setDragging] = useState(false);
 
   const SIZE = isMobile ? 260 : 680;
@@ -129,14 +129,18 @@ export default function NeuralBrain({ isMobile, containerRef: externalRef }) {
       ease: "sine.inOut", repeat: -1, yoyo: true, delay: 0.5,
     });
 
+    // We attach the drag listener directly to the canvas element so GSAP
+    // Draggable can still initiate, but the container stays pointer-events:none
+    // at all other times — links underneath remain fully clickable.
     const draggable = Draggable.create(el, {
       type: "x,y",
       inertia: true,
+      trigger: canvas,   // ← drag initiates only from canvas hits
       cursor: "grab",
       activeCursor: "grabbing",
       onDragStart(e) {
         isDrag.current = true;
-        setDragging(true);          // ← enable pointerEvents while dragging
+        setDragging(true);
         floatRef.current?.pause();
         bobAnim.pause();
         lastMX.current = e.clientX ?? e.touches?.[0]?.clientX ?? 0;
@@ -155,7 +159,7 @@ export default function NeuralBrain({ isMobile, containerRef: externalRef }) {
       },
       onDragEnd() {
         isDrag.current = false;
-        setDragging(false);         // ← disable pointerEvents after drag
+        setDragging(false);
         gsap.to(el, {
           scale: 1, duration: 0.8, ease: "elastic.out(1,0.4)",
           onComplete: () => { floatRef.current?.play(); bobAnim.play(); },
@@ -279,27 +283,25 @@ export default function NeuralBrain({ isMobile, containerRef: externalRef }) {
         top: "50%",
         left: "50%",
         transform: "translate(-50%, -50%)",
-        // ── KEY FIX ──────────────────────────────────────────────────────────
-        // pointerEvents: none by default so it NEVER blocks clicks on UI below.
-        // Only switches to "auto" while the user is actively dragging.
-        // This means you can hover/rotate via mousemove (handled on window),
-        // but the brain won't steal clicks from links and buttons.
-        pointerEvents: dragging ? "auto" : "none",
-        cursor: "grab",
+        // Container is ALWAYS pointer-events:none — it never blocks clicks.
+        // Draggable uses `trigger: canvas` so drag still initiates from canvas.
+        pointerEvents: "none",
         zIndex: 9500,
         userSelect: "none",
         willChange: "transform",
       }}
     >
-      {/* Canvas gets its own pointer-events so drag still initiates on it */}
       <canvas
         ref={canvasRef}
         width={SIZE}
         height={SIZE}
         style={{
           display: "block",
-          pointerEvents: "auto",   // canvas itself is always grabbable
-          cursor: "grab",
+          // Canvas pointer-events mirrors drag state:
+          // - "auto" while dragging so the drag gesture is tracked
+          // - "none" otherwise so clicks pass through to links beneath
+          pointerEvents: dragging ? "auto" : "none",
+          cursor: dragging ? "grabbing" : "grab",
           filter: isMobile
             ? "drop-shadow(0 0 30px rgba(44,100,200,0.4))"
             : "drop-shadow(0 0 60px rgba(44,100,200,0.55)) drop-shadow(0 0 120px rgba(44,80,180,0.25))",
